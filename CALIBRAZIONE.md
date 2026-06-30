@@ -1,47 +1,59 @@
-# Calibrazione gambe — angoli servo reali
+# Calibrazione gambe — mappatura REALE (misurata sul robot)
 
-> Compila questa tabella usando `tools/calibrate_servos.py` sul robot.
-> Sono gli **angoli grezzi** (quelli che digiti nel tool), prima di qualsiasi
-> inversione. Serviranno per costruire l'IK e il gait engine.
->
-> Robot sollevato, zampe per aria. Se il servo ronza/forza = limite: torna indietro.
+> ⚠️ La mappatura ereditata (vecchie etichette A–F, DX/SX in leg_config/handbook) si è
+> rivelata NON affidabile in calibrazione: canali X/Y invertiti e lati sbagliati. Quindi
+> qui ricostruiamo tutto dalla REALTÀ, per **posizione fisica** della gamba.
 
-## Cosa significano le posizioni
+## Convenzione nomi gamba (vista DALL'ALTO, fronte robot LONTANO da te)
+```
+            FRONTE
+     FL ──┐        ┌── FR
+     ML ──┤        ├── MR
+     RL ──┘        └── RR
+            RETRO
+```
+Sinistra/destra = del ROBOT (come se fossi dentro, rivolto in avanti).
 
-- **Servo X = avanti/indietro** (lo swing del passo):
-  - `avanti`  = piede il più avanti possibile (estremo anteriore del passo)
-  - `indietro`= piede il più indietro possibile (estremo posteriore del passo)
-  - `centro`  = a metà tra avanti e indietro (gamba che punta dritta di lato)
-- **Servo Y = su/giù** (l'altezza del piede):
-  - `stance`  = piede appoggiato a terra in posizione "in piedi" (regge il peso)
-  - `swing`   = piede sollevato, staccato dal suolo (fase d'aria del passo)
-- **limiti**  = gli angoli oltre i quali il servo forza meccanicamente (da NON superare)
+## Cosa misurare per ogni gamba (col tool `tools/calibrate_servos.py`)
+- **SWING** (servo avanti/indietro): angolo per AVANTI, CENTRO, INDIETRO.
+- **LIFT** (servo su/giù): angolo per LIVELLO (gamba orizzontale), GIÙ (stance/appoggio), SU (sollevata).
+- **limiti**: angoli oltre i quali il servo forza/ronza (da NON superare).
 
----
-
-## Gamba D (DX) — canali: Y=11 (su/giù), X=10 (avanti/indietro)
-
-| Servo        | Posizione | Angolo (°) | Note |
-|--------------|-----------|------------|------|
-| X (ch 10)    | avanti    |            |      |
-| X (ch 10)    | indietro  |            |      |
-| X (ch 10)    | centro    |            |      |
-| X (ch 10)    | limite min (sicuro) | |      |
-| X (ch 10)    | limite max (sicuro) | |      |
-| Y (ch 11)    | stance (a terra)    | |      |
-| Y (ch 11)    | swing (sollevata)   | |      |
-| Y (ch 11)    | limite min (sicuro) | |      |
-| Y (ch 11)    | limite max (sicuro) | |      |
-
-### Osservazioni libere
-- Aumentando l'angolo del servo X, la gamba va verso: (avanti / indietro?) →
-- Aumentando l'angolo del servo Y, il piede va verso: (su / giù?) →
-- Altre note:
+Robot sollevato, zampe per aria. `+`/`-` per piccoli passi, `step 2` per andare fine.
 
 ---
 
-<!--
-Quando la gamba D è fatta, replicheremo per le altre. Le inversioni in
-leg_config.py serviranno a riportare tutte le gambe alla stessa convenzione
-logica, quindi in teoria basta calibrare bene UNA gamba per lato + verifica.
--->
+## RR — posteriore destra  ✅ MISURATA
+- **SWING**: canale **2** → avanti **50°**, centro **90°**, indietro **130°**
+- **LIFT** : canale **3** → livello **90°**, giù **50°**, su **130°**
+- limiti: swing [ __ , __ ]   lift [ __ , __ ]
+
+## RL — posteriore sinistra
+- **SWING**: canale __ → avanti __°, centro __°, indietro __°
+- **LIFT** : canale __ → livello __°, giù __°, su __°
+- limiti: swing [ __ , __ ]   lift [ __ , __ ]
+
+## MR — centrale destra
+- **SWING**: canale __ → avanti __°, centro __°, indietro __°
+- **LIFT** : canale __ → livello __°, giù __°, su __°
+- limiti: swing [ __ , __ ]   lift [ __ , __ ]
+
+## ML — centrale sinistra
+- **SWING**: canale __ → avanti __°, centro __°, indietro __°
+- **LIFT** : canale __ → livello __°, giù __°, su __°
+- limiti: swing [ __ , __ ]   lift [ __ , __ ]
+
+## FR — anteriore destra
+- **SWING**: canale __ → avanti __°, centro __°, indietro __°
+- **LIFT** : canale __ → livello __°, giù __°, su __°
+- limiti: swing [ __ , __ ]   lift [ __ , __ ]
+
+## FL — anteriore sinistra
+- **SWING**: canale __ → avanti __°, centro __°, indietro __°
+- **LIFT** : canale __ → livello __°, giù __°, su __°
+- limiti: swing [ __ , __ ]   lift [ __ , __ ]
+
+---
+
+<!-- Quando la tabella è piena, ricostruiamo leg_config.py da QUESTI dati (canali, assi,
+     versi, neutri) e poi lo strato (alpha,beta)->servo per l'IK. -->
