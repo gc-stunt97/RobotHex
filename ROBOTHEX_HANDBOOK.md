@@ -86,12 +86,21 @@ restano da misurare i valori numerici esatti prima di finalizzare l'IK.
      Da questo albero parte la **gamba da 14 cm**.
    - **Ordine cinematico (confermato):** X porta con sé tutta la spalla + servo Y + gamba
      (come spalla→gomito nel braccio); Y muove **solo** la gamba.
-   - I due assi **non si intersecano**: ~**21 mm di offset** tra l'asse verticale di X (in alto)
-     e l'asse orizzontale di Y (più in basso). In più c'è l'offset tipico del servo (albero
-     MG996R spostato ~10 mm verso un'estremità del case).
+   - I due assi **non si intersecano**. Offset orizzontale dall'asse X (verticale) al fulcro
+     di Y (versi confermati da Giulio):
+       - **~20 mm lungo OUT** (laterale, verso l'esterno del robot)
+       - **~40 mm lungo FWD** (avanti/indietro, lungo la lunghezza del robot)
+     (≈ larghezza e lunghezza del case MG996R → coerente con i 2 servi affiancati perpendicolari.)
+   - **Riferimento verticale:** con la **pancia del robot a terra** e gamba perpendicolare,
+     il centro di rotazione della gamba (fulcro Y) sta a ~**24 mm** da terra. Il dislivello
+     verticale esatto asse X ↔ asse Y resta da misurare, ma NON incide sullo swing (rotazione
+     attorno a un asse verticale): serve solo per l'altezza assoluta del piede.
+
+   Convenzione assi locali gamba: **OUT** = verso l'esterno (dove punta la gamba dritta),
+   **FWD** = verso il davanti del robot, **UP** = verso l'alto.
 
    **Catena cinematica:**
-   `chassis → X (rot. asse VERTICALE, α) → offset ~21 mm → Y (rot. asse ORIZZONTALE, β) → gamba 14 cm → piede`
+   `chassis → X (rot. asse VERTICALE, α) → offset [20 OUT + 40 FWD] → Y (rot. asse ORIZZONTALE ∥ FWD, β) → gamba 14 cm (punta OUT a β=0) → piede`
 
 2. **Spalle posteriori invertite (fedeltà al Genghis originale).** Le 4 spalle anteriori/
    centrali hanno la gamba fissata al fulcro del servo Y rivolto verso l'**anteriore**
