@@ -28,6 +28,11 @@ def mirror(angle):
     return 180.0 - angle
 
 
+def clamp(angle, lo=0.0, hi=180.0):
+    """Blocca l'angolo nei limiti fisici del servo (0-180), così non va mai fuori range."""
+    return max(lo, min(hi, angle))
+
+
 class Servo2DOF:
     """
     Coppia di servo (sollevamento + trascinamento) che condividono UN SOLO ServoKit.
@@ -46,8 +51,8 @@ class Servo2DOF:
             angolo_x = mirror(angolo_x)
         if self.invert_y:
             angolo_y = mirror(angolo_y)
-        self.kit.servo[self.channel_x].angle = angolo_x
-        self.kit.servo[self.channel_y].angle = angolo_y
+        self.kit.servo[self.channel_x].angle = clamp(angolo_x)
+        self.kit.servo[self.channel_y].angle = clamp(angolo_y)
 
 
 class Leg(Servo2DOF):
