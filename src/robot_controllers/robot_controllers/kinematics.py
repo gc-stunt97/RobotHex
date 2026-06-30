@@ -79,12 +79,20 @@ def inverse_kinematics(fwd, up, leg_len, offset_out, offset_fwd):
     return (math.degrees(alpha), math.degrees(beta), out)
 
 
-# --------------------------------------------------------------------------------------
-# TODO (prossimo strato, dopo la calibrazione):
-#   leg_angles_to_servo(alpha, beta, cfg) -> (servo_x_angle, servo_y_angle)
-#   Userà i dati di CALIBRAZIONE.md: a quale angolo servo corrisponde alpha=0 / beta=0,
-#   il verso (segno) di ciascun servo, e le inversioni invert_x/invert_y di leg_config.
-# --------------------------------------------------------------------------------------
+def leg_angles_to_servo(alpha_deg, beta_deg, swing_center, lift_level,
+                        swing_fwd_high, lift_up_high):
+    """
+    Angoli LOGICI (alpha swing, beta lift) -> ANGOLI SERVO grezzi.
+    Usa i versi misurati in calibrazione (campi di leg_config.LegConfig).
+
+    - swing_fwd_high True  -> avanti = angolo alto  -> servo = center + alpha
+                     False -> avanti = angolo basso -> servo = center - alpha
+    - lift_up_high   True  -> su = angolo alto; beta>0 (giu) abbassa -> servo = level - beta
+                     False -> su = angolo basso; beta>0 (giu) alza   -> servo = level + beta
+    """
+    swing = swing_center + (alpha_deg if swing_fwd_high else -alpha_deg)
+    lift = lift_level + (-beta_deg if lift_up_high else beta_deg)
+    return swing, lift
 
 
 def _selftest():
@@ -105,6 +113,17 @@ def _selftest():
                   f"IK (a={a:6.1f}, b={b:5.1f})")
         except ValueError as e:
             print(f"  [--] in (a={alpha0:6.1f}, b={beta0:5.1f}) -> {e}")
+
+    print("\nDemo catena completa per la gamba RR (offset_fwd=-40, center=90, level=90,")
+    print("swing_fwd_high=False, lift_up_high=True) — target piede -> servo:\n")
+    for fwd, up in [(-40, 0), (-20, -40), (-60, -40), (-40, -90)]:
+        try:
+            a, b, out = inverse_kinematics(fwd, up, 140.0, 20.0, -40.0)
+            sw, lf = leg_angles_to_servo(a, b, 90.0, 90.0, swing_fwd_high=False, lift_up_high=True)
+            print(f"  target(fwd={fwd:6.1f}, up={up:6.1f}) -> alpha={a:6.1f} beta={b:5.1f}"
+                  f" -> SERVO swing(ch2)={sw:6.1f}  lift(ch3)={lf:6.1f}   [out={out:6.1f}]")
+        except ValueError as e:
+            print(f"  target(fwd={fwd:6.1f}, up={up:6.1f}) -> {e}")
 
 
 if __name__ == "__main__":
