@@ -36,6 +36,19 @@ def foot_trajectory(phase, center_fwd, stride, stance_up, swing_lift, duty=0.5):
     return fwd, up
 
 
+# Offset di fase (frazioni di ciclo 0..1) per i pattern di andatura.
+# Nomi gamba come in leg_config.LEGS.
+GAITS = {
+    # Tripode: 2 gruppi di 3 gambe alternati (triangoli stabili). Ideale con duty=0.5.
+    "tripod": {"FL": 0.0, "MR": 0.0, "RL": 0.0,
+               "FR": 0.5, "ML": 0.5, "RR": 0.5},
+    # Ripple: sfasamento progressivo di 1/6 (piu' fluido, piu' lento).
+    "ripple": {"RR": 0.0, "RL": 1.0 / 6, "MR": 2.0 / 6, "ML": 3.0 / 6, "FR": 4.0 / 6, "FL": 5.0 / 6},
+    # Wave: una gamba alla volta (per renderlo davvero tale servirebbe duty ~5/6).
+    "wave": {"RR": 0.0, "MR": 1.0 / 6, "FR": 2.0 / 6, "FL": 3.0 / 6, "ML": 4.0 / 6, "RL": 5.0 / 6},
+}
+
+
 def _selftest():
     print("Traiettoria piede su un ciclo (center_fwd=-40, stride=40, stance_up=-80, swing_lift=40):\n")
     print("  fase    fwd     up     tipo")
