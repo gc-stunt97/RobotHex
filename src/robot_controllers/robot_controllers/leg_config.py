@@ -45,6 +45,21 @@ LEFT_LEGS = ["F", "B", "C"]
 HEAD_CHANNEL_Y = 12
 HEAD_CHANNEL_X = 13
 
-# Geometria della gamba — da RAFFINARE con la calibrazione sul robot reale.
-# Per ora c'è solo la lunghezza complessiva nota dal vecchio codice.
-LEG_LENGTH_CM = 14.0
+# --- Geometria per la cinematica (in mm). Vedi ROBOTHEX_HANDBOOK.md sez. 3b. ---
+LEG_LENGTH_MM = 140.0           # lunghezza gamba (14 cm), dall'asse Y alla punta del piede
+SHOULDER_OFFSET_OUT_MM = 20.0   # offset asse X -> fulcro Y, lungo OUT (laterale, verso l'esterno)
+SHOULDER_OFFSET_FWD_MM = 40.0   # offset asse X -> fulcro Y, lungo FWD (avanti/indietro)
+
+# Le 2 spalle POSTERIORI sono specchiate avanti-indietro: il loro offset_fwd e' NEGATIVO
+# (verso il retro). TODO Giulio: indicare quali sono le 2 gambe posteriori.
+REAR_LEGS = []  # es. ["D", "E"] — DA CONFERMARE
+
+
+def offset_fwd_for(leg_name):
+    """Offset FWD firmato: +40 mm per anteriori/intermedie, -40 mm per le 2 posteriori."""
+    sign = -1.0 if leg_name in REAR_LEGS else 1.0
+    return sign * SHOULDER_OFFSET_FWD_MM
+
+
+# Retro-compatibilita': vecchio nome in cm ancora usato dal nodo.
+LEG_LENGTH_CM = LEG_LENGTH_MM / 10.0
