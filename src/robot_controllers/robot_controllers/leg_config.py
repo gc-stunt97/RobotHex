@@ -52,7 +52,7 @@ SHOULDER_OFFSET_FWD_MM = 40.0   # offset asse X -> fulcro Y, lungo FWD (avanti/i
 
 # Le 2 spalle POSTERIORI sono specchiate avanti-indietro: il loro offset_fwd e' NEGATIVO
 # (verso il retro). TODO Giulio: indicare quali sono le 2 gambe posteriori.
-REAR_LEGS = []  # es. ["D", "E"] — DA CONFERMARE
+REAR_LEGS = ["D", "C"]  # gambe posteriori (D = destra, C = sinistra): offset_fwd negativo
 
 
 def offset_fwd_for(leg_name):
