@@ -1,0 +1,8 @@
+# ROS2 / colcon (rigenerati dal build, non versionare)
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
