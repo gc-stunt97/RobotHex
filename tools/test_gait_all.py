@@ -28,14 +28,17 @@ from robot_controllers.kinematics import inverse_kinematics, leg_angles_to_servo
 from robot_controllers.gait import foot_trajectory, GAITS
 
 # --- parametri del gait (mm e secondi) ---
-STRIDE = 40.0
-STANCE_UP = -80.0
-SWING_LIFT = 40.0
+# STANCE_UP piu' NEGATIVO = robot piu' ALTO (piede spinge piu' giu').
+# STRIDE piu' grande = passo/trascinata piu' lunga.
+STRIDE = 60.0
+STANCE_UP = -100.0
+SWING_LIFT = 45.0
 DUTY = 0.5
 PERIOD = 2.0
 RATE_HZ = 50.0
 
-SAFE_MIN, SAFE_MAX = 50.0, 130.0
+# Clamp di sicurezza allargato in basso (35) per permettere al robot di alzarsi di piu'.
+SAFE_MIN, SAFE_MAX = 35.0, 130.0
 
 
 def clamp_safe(a):
