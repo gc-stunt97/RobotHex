@@ -71,18 +71,27 @@ Costruttore: `Leg(channel_y, channel_x, invert_x=False, invert_y=False)`
 
 ---
 
-## 3b. Geometria meccanica reale della "spalla" (PROVVISORIO — da misurare con precisione)
+## 3b. Geometria meccanica reale della "spalla" (STRUTTURA CONFERMATA — numeri da misurare)
 
-⚠️ La gamba NON è un giunto cardanico ideale. Dettagli dati da Giulio (giugno 2026),
-da confermare con misure precise prima di finalizzare l'IK:
+⚠️ La gamba NON è un giunto cardanico ideale. Struttura confermata da Giulio (giugno 2026);
+restano da misurare i valori numerici esatti prima di finalizzare l'IK.
 
-1. **Giunto a 2 servo incollati a 90°.** Ogni spalla = due servo fissati uno accanto
-   all'altro, orientati a 90°. I due assi di rotazione **non si intersecano**: c'è un
-   **offset di ~21 mm** tra l'asse verticale (servo X, swing avanti/indietro) e l'asse
-   orizzontale (servo Y, a cui è attaccata la gamba da 14 cm).
-   → Catena cinematica reale: asse X (verticale) → braccetto offset ~21 mm → asse Y
-     (orizzontale) → segmento gamba 14 cm → piede. In più c'è l'offset tipico del servo
-     (albero spostato verso un bordo del case).
+1. **Giunto a 2 servo (MG996R) incollati a 90°.** Costruzione:
+   - Si accostano 2 servo sulla faccia più ampia del case, con un albero verso un lato e
+     l'altro albero verso il lato opposto (alberi su estremità opposte → "in diagonale" sul tetto).
+   - **Servo X**: albero verso l'**alto**, ancorato al chassis → asse di rotazione **VERTICALE**
+     = swing avanti/indietro (α). La protuberanza dell'albero punta verso l'**esterno**.
+   - **Servo Y**: ruotato di **90°** su quel piano → l'albero "scende" e si ritrova più in
+     basso, con asse di rotazione **ORIZZONTALE**, perpendicolare a quello di X = lift su/giù (β).
+     Da questo albero parte la **gamba da 14 cm**.
+   - **Ordine cinematico (confermato):** X porta con sé tutta la spalla + servo Y + gamba
+     (come spalla→gomito nel braccio); Y muove **solo** la gamba.
+   - I due assi **non si intersecano**: ~**21 mm di offset** tra l'asse verticale di X (in alto)
+     e l'asse orizzontale di Y (più in basso). In più c'è l'offset tipico del servo (albero
+     MG996R spostato ~10 mm verso un'estremità del case).
+
+   **Catena cinematica:**
+   `chassis → X (rot. asse VERTICALE, α) → offset ~21 mm → Y (rot. asse ORIZZONTALE, β) → gamba 14 cm → piede`
 
 2. **Spalle posteriori invertite (fedeltà al Genghis originale).** Le 4 spalle anteriori/
    centrali hanno la gamba fissata al fulcro del servo Y rivolto verso l'**anteriore**
