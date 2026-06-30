@@ -1,59 +1,34 @@
-# Calibrazione gambe — mappatura REALE (misurata sul robot)
+# Calibrazione gambe — stato
 
-> ⚠️ La mappatura ereditata (vecchie etichette A–F, DX/SX in leg_config/handbook) si è
-> rivelata NON affidabile in calibrazione: canali X/Y invertiti e lati sbagliati. Quindi
-> qui ricostruiamo tutto dalla REALTÀ, per **posizione fisica** della gamba.
+## ✅ Fatto: mappatura canali (giugno 2026)
+Mappa reale dei 12 canali ricostruita e salvata in `leg_config.py` (LEGS).
+Riassunto (vista dall'alto, fronte lontano):
 
-## Convenzione nomi gamba (vista DALL'ALTO, fronte robot LONTANO da te)
-```
-            FRONTE
-     FL ──┐        ┌── FR
-     ML ──┤        ├── MR
-     RL ──┘        └── RR
-            RETRO
-```
-Sinistra/destra = del ROBOT (come se fossi dentro, rivolto in avanti).
+| Gamba | swing (ch) | lift (ch) | avanti = angolo | su = angolo |
+|-------|-----------|-----------|-----------------|-------------|
+| FL    | 4         | 5         | alto            | alto        |
+| ML    | 0         | 1         | alto            | alto        |
+| RL    | 11        | 10        | alto            | basso       |
+| FR    | 6         | 7         | basso           | basso       |
+| MR    | 9         | 8         | basso           | basso       |
+| RR    | 2         | 3         | basso           | alto        |
 
-## Cosa misurare per ogni gamba (col tool `tools/calibrate_servos.py`)
-- **SWING** (servo avanti/indietro): angolo per AVANTI, CENTRO, INDIETRO.
-- **LIFT** (servo su/giù): angolo per LIVELLO (gamba orizzontale), GIÙ (stance/appoggio), SU (sollevata).
-- **limiti**: angoli oltre i quali il servo forza/ronza (da NON superare).
+Testa: ch12 tilt (70=su,110=giù), ch13 pan (70=destra,110=sinistra).
 
-Robot sollevato, zampe per aria. `+`/`-` per piccoli passi, `step 2` per andare fine.
+## ⏳ Da fare: riferimenti fini per servo (per l'IK accurata)
+Per ogni gamba servono, in angolo servo:
+- **swing_center**: angolo a cui la gamba punta dritta di lato (perpendicolare) = swing neutro (α=0)
+- **lift_level**: angolo a cui la gamba è orizzontale (β=0)
+- **limiti** sicuri (min/max) di ogni servo, dove inizia a forzare
 
----
+> Si possono trovare col tool `tools/calibrate_servos.py`. Per ora nel codice valgono 90/90
+> come default; confermato solo su RR. Affinarli migliora la precisione dell'IK.
 
-## RR — posteriore destra  ✅ MISURATA
-- **SWING**: canale **2** → avanti **50°**, centro **90°**, indietro **130°**
-- **LIFT** : canale **3** → livello **90°**, giù **50°**, su **130°**
-- limiti: swing [ __ , __ ]   lift [ __ , __ ]
-
-## RL — posteriore sinistra
-- **SWING**: canale __ → avanti __°, centro __°, indietro __°
-- **LIFT** : canale __ → livello __°, giù __°, su __°
-- limiti: swing [ __ , __ ]   lift [ __ , __ ]
-
-## MR — centrale destra
-- **SWING**: canale __ → avanti __°, centro __°, indietro __°
-- **LIFT** : canale __ → livello __°, giù __°, su __°
-- limiti: swing [ __ , __ ]   lift [ __ , __ ]
-
-## ML — centrale sinistra
-- **SWING**: canale __ → avanti __°, centro __°, indietro __°
-- **LIFT** : canale __ → livello __°, giù __°, su __°
-- limiti: swing [ __ , __ ]   lift [ __ , __ ]
-
-## FR — anteriore destra
-- **SWING**: canale __ → avanti __°, centro __°, indietro __°
-- **LIFT** : canale __ → livello __°, giù __°, su __°
-- limiti: swing [ __ , __ ]   lift [ __ , __ ]
-
-## FL — anteriore sinistra
-- **SWING**: canale __ → avanti __°, centro __°, indietro __°
-- **LIFT** : canale __ → livello __°, giù __°, su __°
-- limiti: swing [ __ , __ ]   lift [ __ , __ ]
-
----
-
-<!-- Quando la tabella è piena, ricostruiamo leg_config.py da QUESTI dati (canali, assi,
-     versi, neutri) e poi lo strato (alpha,beta)->servo per l'IK. -->
+| Gamba | swing_center | lift_level | limiti swing | limiti lift |
+|-------|-------------|-----------|--------------|-------------|
+| FL    | ?           | ?         | [ , ]        | [ , ]       |
+| ML    | ?           | ?         | [ , ]        | [ , ]       |
+| RL    | ?           | ?         | [ , ]        | [ , ]       |
+| FR    | ?           | ?         | [ , ]        | [ , ]       |
+| MR    | ?           | ?         | [ , ]        | [ , ]       |
+| RR    | 90          | 90        | [ , ]        | [ , ]       |
