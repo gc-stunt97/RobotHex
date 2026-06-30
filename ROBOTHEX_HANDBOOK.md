@@ -71,6 +71,45 @@ Costruttore: `Leg(channel_y, channel_x, invert_x=False, invert_y=False)`
 
 ---
 
+## 3b. Geometria meccanica reale della "spalla" (PROVVISORIO — da misurare con precisione)
+
+⚠️ La gamba NON è un giunto cardanico ideale. Dettagli dati da Giulio (giugno 2026),
+da confermare con misure precise prima di finalizzare l'IK:
+
+1. **Giunto a 2 servo incollati a 90°.** Ogni spalla = due servo fissati uno accanto
+   all'altro, orientati a 90°. I due assi di rotazione **non si intersecano**: c'è un
+   **offset di ~21 mm** tra l'asse verticale (servo X, swing avanti/indietro) e l'asse
+   orizzontale (servo Y, a cui è attaccata la gamba da 14 cm).
+   → Catena cinematica reale: asse X (verticale) → braccetto offset ~21 mm → asse Y
+     (orizzontale) → segmento gamba 14 cm → piede. In più c'è l'offset tipico del servo
+     (albero spostato verso un bordo del case).
+
+2. **Spalle posteriori invertite (fedeltà al Genghis originale).** Le 4 spalle anteriori/
+   centrali hanno la gamba fissata al fulcro del servo Y rivolto verso l'**anteriore**
+   (vite di fissaggio gamba visibile da davanti, offset del servo X verso l'anteriore).
+   Le **2 spalle posteriori sono ruotate 180°**: vite e offset del servo X visibili/rivolti
+   verso il **posteriore**.
+
+3. **Conseguenza: appoggio (stance) asimmetrico.** A riposo i piedi NON sono equidistanti:
+   le 2 anteriori sono più vicine alle centrali, mentre le centrali sono più distanti dalle
+   posteriori. Voluto, per dare più stabilità (come nel Genghis).
+
+**Implicazioni per l'IK:**
+- L'offset di ~21 mm tra gli assi → l'IK non è una "sfera di raggio 14 cm" pura, ma una
+  catena a 2 giunti con offset perpendicolare. Resta trigonometria in forma chiusa, con un
+  termine in più. Normale per gambe reali.
+- L'orientamento delle spalle (4 vs 2 invertite) → va codificato **per-gamba** in
+  `leg_config.py` (direzione dell'offset + segni degli assi), estendendo il concetto degli
+  attuali `invert_x`/`invert_y`.
+- La spaziatura asimmetrica → posizioni di attacco delle gambe nel frame del corpo, diverse
+  per gamba; servono al gait engine e al body-leveling.
+
+**Da misurare (TODO Giulio):** offset esatto tra gli assi, offset albero servo, lunghezze dei
+segmenti tra i fulcri, posizioni di attacco di ogni spalla sul corpo, limiti d'angolo reali.
+→ Questi numeri confluiranno nel modello (e in un futuro URDF, vedi sez. 6).
+
+---
+
 ## 4. Stato del codice
 
 ### Cosa esiste
