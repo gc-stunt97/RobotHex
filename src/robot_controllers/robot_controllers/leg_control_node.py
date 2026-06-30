@@ -107,7 +107,8 @@ def main(args=None):
         pass
     finally:
         node.destroy_node()   # era node.shutdown() (metodo inesistente): BUG corretto
-        rclpy.shutdown()
+        if rclpy.ok():        # su Ctrl+C il context e' gia' chiuso dal signal handler -> non richiudere
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":
