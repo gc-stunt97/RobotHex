@@ -88,8 +88,9 @@ restano da misurare i valori numerici esatti prima di finalizzare l'IK.
      (come spalla→gomito nel braccio); Y muove **solo** la gamba.
    - I due assi **non si intersecano**. Offset orizzontale dall'asse X (verticale) al fulcro
      di Y (versi confermati da Giulio):
-       - **~20 mm lungo OUT** (laterale, verso l'esterno del robot)
-       - **~40 mm lungo FWD** (avanti/indietro, lungo la lunghezza del robot)
+       - spalle **anteriori e intermedie (4)**: **~20 mm lungo OUT** + **~40 mm lungo FWD**
+       - spalle **posteriori (2)**: **~20 mm lungo OUT** (uguale) + **~40 mm verso BACKWARDS**
+         → si inverte SOLO la componente avanti/indietro (FWD→indietro); la laterale (OUT) resta.
      (≈ larghezza e lunghezza del case MG996R → coerente con i 2 servi affiancati perpendicolari.)
    - **Riferimento verticale:** con la **pancia del robot a terra** e gamba perpendicolare,
      il centro di rotazione della gamba (fulcro Y) sta a ~**24 mm** da terra. Il dislivello
@@ -105,8 +106,9 @@ restano da misurare i valori numerici esatti prima di finalizzare l'IK.
 2. **Spalle posteriori invertite (fedeltà al Genghis originale).** Le 4 spalle anteriori/
    centrali hanno la gamba fissata al fulcro del servo Y rivolto verso l'**anteriore**
    (vite di fissaggio gamba visibile da davanti, offset del servo X verso l'anteriore).
-   Le **2 spalle posteriori sono ruotate 180°**: vite e offset del servo X visibili/rivolti
-   verso il **posteriore**.
+   Le **2 spalle posteriori sono specchiate avanti-indietro**: vite e offset del servo X
+   rivolti verso il **posteriore**. In pratica nell'offset si inverte solo la componente FWD
+   (i ~40 mm vanno verso il retro), mentre la componente OUT (~20 mm) resta verso l'esterno.
 
 3. **Conseguenza: appoggio (stance) asimmetrico.** A riposo i piedi NON sono equidistanti:
    le 2 anteriori sono più vicine alle centrali, mentre le centrali sono più distanti dalle
