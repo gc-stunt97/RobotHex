@@ -6,6 +6,32 @@
 
 ---
 
+## 0. Stato attuale — RIPRENDI DA QUI (giugno 2026)
+
+**Fatto:** backup git su GitHub; IK a 2 DOF completa e verificata sul robot (`kinematics.py`);
+mappatura servo REALE per posizione FL/FR/ML/MR/RL/RR (`leg_config.py`, ricostruita in
+calibrazione — la vecchia tabella A-F era sbagliata); gait engine (`gait.py`) con tripode/
+ripple/wave **funzionante su tutte e 6 le gambe** (`tools/test_gait_all.py <pattern>`).
+
+**Prossimo passo (BLOCCANTE per migliorare il gait):** calibrare i riferimenti per-gamba.
+Ora solo **RR** ha `swing_center`/`lift_level` reali (90/90); le altre 5 usano 90/90 di
+default → per questo, cambiando i parametri del gait, il robot si comporta male e le altezze
+non sono uniformi.
+→ Compilare `CALIBRAZIONE.md` (swing_center, lift_level, limiti per FL/FR/ML/MR/RL) usando
+`tools/calibrate_servos.py`, poi riportare i valori in `leg_config.py` (campi di `LEGS`).
+
+**Poi:** camminata reale a terra (servono le quote di attacco delle spalle), nodo ROS2
+pilotato dal joystick, IMU per leveling, URDF+Gazebo.
+
+**Strumenti pronti (standalone, `python3 tools/...`, niente colcon):**
+`calibrate_servos.py` (calibrazione), `test_ik_leg.py <gamba>` (IK su 1 gamba),
+`test_gait_leg.py <gamba>` (gait 1 gamba), `test_gait_all.py <pattern>` (gait 6 gambe).
+
+**Workflow:** sviluppo su Windows `C:\Users\giuli\RobotHex` → `git push` → sul robot
+`git pull` + lancio. (Il nodo ROS2 `leg_control` per ora muove solo la testa.)
+
+---
+
 ## 1. Cos'è il progetto
 
 Replica del robot **Genghis** (Rodney Brooks, MIT, ~1991): esapode a 6 zampe,
