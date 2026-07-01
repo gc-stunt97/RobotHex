@@ -3,19 +3,24 @@
 Gait su TUTTE E 6 le gambe: camminata coordinata sul posto via IK. STANDALONE (no ROS2).
 
 Ogni gamba esegue la stessa traiettoria di passo, ma con un OFFSET DI FASE diverso
-(vedi gait.GAITS) -> tripode / ripple / wave.
+(vedi gait.GAITS) -> tripode / ripple / wave. Usa i riferimenti calibrati in leg_config.
 
 USO (sul robot, dentro ~/robothex_ws):
-    python3 tools/test_gait_all.py [PATTERN]
+    python3 tools/test_gait_all.py [PATTERN] [opzioni]
     es:  python3 tools/test_gait_all.py tripod
-         python3 tools/test_gait_all.py ripple
+         python3 tools/test_gait_all.py ripple --stance-up -115 --stride 75
 
-⚠️  Robot SOLLEVATO, zampe per aria. Clamp servo 50-130. Ctrl+C per fermare (tutte al neutro).
+Opzioni per tarare il movimento dal vivo (senza editare il codice):
+    --stride N       lunghezza del passo / trascinata (mm)          [default 60]
+    --stance-up N    altezza: piu' NEGATIVO = robot piu' ALTO (mm)  [default -100]
+    --lift N         quanto si solleva il piede in swing (mm)       [default 45]
+    --period N       durata di un ciclo, piu' piccolo = piu' veloce [default 2.0]
+    --duty N         frazione del ciclo a terra (0..1)              [default 0.5]
 
-NB: solo RR ha center/level affinati (90/90); le altre usano 90/90 di default, quindi
-le altezze potrebbero non essere perfettamente uniformi finche' non le calibriamo.
+⚠️  Robot SOLLEVATO, zampe per aria. Ctrl+C per fermare (tutte al neutro).
 """
 
+import argparse
 import os
 import sys
 import time
@@ -27,18 +32,10 @@ from robot_controllers import leg_config as L
 from robot_controllers.kinematics import inverse_kinematics, leg_angles_to_servo
 from robot_controllers.gait import foot_trajectory, GAITS
 
-# --- parametri del gait (mm e secondi) ---
-# STANCE_UP piu' NEGATIVO = robot piu' ALTO (piede spinge piu' giu').
-# STRIDE piu' grande = passo/trascinata piu' lunga.
-STRIDE = 60.0
-STANCE_UP = -100.0
-SWING_LIFT = 45.0
-DUTY = 0.5
-PERIOD = 2.0
 RATE_HZ = 50.0
-
-# Clamp di sicurezza allargato in basso (35) per permettere al robot di alzarsi di piu'.
-SAFE_MIN, SAFE_MAX = 35.0, 130.0
+# Clamp di sicurezza. I servo non hanno fine-corsa meccanici (il vero limite sono le
+# collisioni gamba-gamba, gestite dalla fase), ma teniamo un margine dai 0/180 estremi.
+SAFE_MIN, SAFE_MAX = 25.0, 155.0
 
 
 def clamp_safe(a):
@@ -51,16 +48,28 @@ def go_neutral(kit):
         kit.servo[cfg.lift_channel].angle = clamp_safe(cfg.lift_level)
 
 
+def build_parser():
+    p = argparse.ArgumentParser(description="Gait a 6 gambe con tuning da CLI.")
+    p.add_argument("pattern", nargs="?", default="tripod", help="tripod | ripple | wave")
+    p.add_argument("--stride", type=float, default=60.0)
+    p.add_argument("--stance-up", type=float, default=-100.0)
+    p.add_argument("--lift", type=float, default=45.0)
+    p.add_argument("--period", type=float, default=2.0)
+    p.add_argument("--duty", type=float, default=0.5)
+    return p
+
+
 def main():
-    gait_name = sys.argv[1].lower() if len(sys.argv) > 1 else "tripod"
+    args = build_parser().parse_args()
+    gait_name = args.pattern.lower()
     if gait_name not in GAITS:
         print(f"Pattern '{gait_name}' sconosciuto. Disponibili: {list(GAITS)}")
         return
     offsets = GAITS[gait_name]
 
-    print(__doc__)
-    print(f"Pattern: {gait_name} | periodo={PERIOD}s | stride={STRIDE} | lift={SWING_LIFT}")
-    print("Avvio... Ctrl+C per fermare.\n")
+    print(f"Pattern: {gait_name} | stride={args.stride} | stance_up={args.stance_up} | "
+          f"lift={args.lift} | period={args.period}s | duty={args.duty}")
+    print("Robot sollevato, zampe per aria. Ctrl+C per fermare.\n")
 
     kit = ServoKit(channels=16)
     go_neutral(kit)
@@ -73,7 +82,8 @@ def main():
             for name, cfg in L.LEGS.items():
                 off_fwd = L.offset_fwd_for(name)
                 leg_phase = phase + offsets.get(name, 0.0)
-                fwd, up = foot_trajectory(leg_phase, off_fwd, STRIDE, STANCE_UP, SWING_LIFT, DUTY)
+                fwd, up = foot_trajectory(leg_phase, off_fwd, args.stride, args.stance_up,
+                                          args.lift, args.duty)
                 try:
                     alpha, beta, _ = inverse_kinematics(fwd, up, L.LEG_LENGTH_MM,
                                                          L.SHOULDER_OFFSET_OUT_MM, off_fwd)
@@ -83,7 +93,7 @@ def main():
                     kit.servo[cfg.lift_channel].angle = clamp_safe(lf)
                 except ValueError:
                     pass
-            phase = (phase + dt / PERIOD) % 1.0
+            phase = (phase + dt / args.period) % 1.0
             time.sleep(dt)
     except KeyboardInterrupt:
         go_neutral(kit)
