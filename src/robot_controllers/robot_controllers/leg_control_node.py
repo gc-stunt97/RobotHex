@@ -35,16 +35,16 @@ class HeadController(Node):
         # --- parametri (regolabili senza toccare il codice) ---
         self.declare_parameter("pan_center", 90.0)    # angolo servo a testa centrata
         self.declare_parameter("tilt_center", 90.0)
-        self.declare_parameter("range_deg", 30.0)     # escursione per lato (gradi)
-        self.declare_parameter("limit_min", 50.0)     # clamp di sicurezza dei servo testa
-        self.declare_parameter("limit_max", 130.0)
-        self.declare_parameter("invert_tilt", False)  # True = avanti fa guardare in giu'
+        self.declare_parameter("range_deg", 90.0)     # escursione per lato: 90 = range pieno 0-180
+        self.declare_parameter("limit_min", 0.0)      # clamp di sicurezza (0/180 = range pieno)
+        self.declare_parameter("limit_max", 180.0)
+        self.declare_parameter("invert_tilt", False)  # default: avanti = guarda GIU'; True = guarda SU
         self._pan_c = float(self.get_parameter("pan_center").value)
         self._tilt_c = float(self.get_parameter("tilt_center").value)
         self._range = float(self.get_parameter("range_deg").value)
         self._lo = float(self.get_parameter("limit_min").value)
         self._hi = float(self.get_parameter("limit_max").value)
-        self._tilt_sign = 1.0 if self.get_parameter("invert_tilt").value else -1.0
+        self._tilt_sign = -1.0 if self.get_parameter("invert_tilt").value else 1.0
 
         self.kit = ServoKit(channels=16)
         # posizione neutra all'avvio (camera centrata)
@@ -57,7 +57,7 @@ class HeadController(Node):
     def callback(self, msg):
         # x = destra(+) -> pan a destra = angolo basso -> sottraggo
         pan = self._pan_c - msg.x * self._range
-        # y = avanti(+) -> di default guarda in SU (angolo basso); invert_tilt per scambiare
+        # y = avanti(+) -> di default guarda in GIU' (angolo alto); invert_tilt per scambiare
         tilt = self._tilt_c + self._tilt_sign * msg.y * self._range
         self.kit.servo[HEAD_PAN_CHANNEL].angle = clamp(pan, self._lo, self._hi)
         self.kit.servo[HEAD_TILT_CHANNEL].angle = clamp(tilt, self._lo, self._hi)
