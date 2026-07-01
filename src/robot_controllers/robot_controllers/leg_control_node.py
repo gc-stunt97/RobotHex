@@ -33,7 +33,7 @@ class HeadController(Node):
         super().__init__("head_controller")
 
         # --- parametri (regolabili senza toccare il codice) ---
-        self.declare_parameter("pan_center", 90.0)    # angolo servo a testa centrata
+        self.declare_parameter("pan_center", 100.0)   # angolo servo a testa centrata (calibrato)
         self.declare_parameter("tilt_center", 90.0)
         self.declare_parameter("range_deg", 90.0)     # escursione per lato: 90 = range pieno 0-180
         self.declare_parameter("limit_min", 0.0)      # clamp di sicurezza (0/180 = range pieno)
