@@ -24,11 +24,16 @@ Per ogni gamba servono, in angolo servo:
 > Si possono trovare col tool `tools/calibrate_servos.py`. Per ora nel codice valgono 90/90
 > come default; confermato solo su RR. Affinarli migliora la precisione dell'IK.
 
+Calibrati a mano su hardware (luglio 2026). I **limiti** sono lasciati vuoti di
+proposito: i servo non hanno fine-corsa meccanici, il vero vincolo sono le
+collisioni gamba-gamba, che dipendono dalla FASE del gait (le gestisce il gait
+engine con sfasamento + ampiezza di traiettoria contenuta, non un clamp per-servo).
+
 | Gamba | swing_center | lift_level | limiti swing | limiti lift |
 |-------|-------------|-----------|--------------|-------------|
-| FL    | ?           | ?         | [ , ]        | [ , ]       |
-| ML    | ?           | ?         | [ , ]        | [ , ]       |
-| RL    | ?           | ?         | [ , ]        | [ , ]       |
-| FR    | ?           | ?         | [ , ]        | [ , ]       |
-| MR    | ?           | ?         | [ , ]        | [ , ]       |
-| RR    | 90          | 90        | [ , ]        | [ , ]       |
+| FL    | 90          | 85        | (n/d)        | (n/d)       |
+| ML    | 78          | 85        | (n/d)        | (n/d)       |
+| RL    | 85          | 78        | (n/d)        | (n/d)       |
+| FR    | 80          | 95        | (n/d)        | (n/d)       |
+| MR    | 92          | 82        | (n/d)        | (n/d)       |
+| RR    | 93          | 93        | (n/d)        | (n/d)       |
