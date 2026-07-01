@@ -6,29 +6,38 @@
 
 ---
 
-## 0. Stato attuale — RIPRENDI DA QUI (giugno 2026)
+## 0. Stato attuale — RIPRENDI DA QUI (luglio 2026)
 
-**Fatto:** backup git su GitHub; IK a 2 DOF completa e verificata sul robot (`kinematics.py`);
-mappatura servo REALE per posizione FL/FR/ML/MR/RL/RR (`leg_config.py`, ricostruita in
-calibrazione — la vecchia tabella A-F era sbagliata); gait engine (`gait.py`) con tripode/
-ripple/wave **funzionante su tutte e 6 le gambe** (`tools/test_gait_all.py <pattern>`).
+**Fatto:** backup git; IK 2 DOF verificata (`kinematics.py`); mappatura servo REALE
+FL/FR/ML/MR/RL/RR (`leg_config.py`); gait engine tripode/ripple/wave su tutte e 6 le gambe.
+- ✅ **Calibrazione completa 6 gambe**: `swing_center`/`lift_level` reali in `leg_config.py`
+  (FL 90/85, FR 80/95, ML 78/85, MR 92/82, RL 85/78, RR 93/93). Limiti per-servo omessi
+  di proposito (no fine-corsa meccanici; collisioni = compito del gait via fase). Col nuovo
+  zero il tripode gira **uniforme**.
+- ✅ **Controllo testa dal joystick, via WiFi**: `leg_control_node.py` (`HeadController`)
+  sub `right_joystick_data` → pan/tilt (X→pan, Y→tilt, avanti=giù; `pan_center=100`). Primo
+  handshake controller↔robot: la scoperta DDS tra i due Pi sulla stessa rete funziona.
+- ✅ **Gait tarabile dal vivo**: `tools/test_gait_all.py <pattern>` con tuning da tastiera
+  mentre gira (`up <mm>`=altezza, `stride`, `lift`, `period`, `duty`, `?`, `q`).
 
-**Prossimo passo (BLOCCANTE per migliorare il gait):** calibrare i riferimenti per-gamba.
-Ora solo **RR** ha `swing_center`/`lift_level` reali (90/90); le altre 5 usano 90/90 di
-default → per questo, cambiando i parametri del gait, il robot si comporta male e le altezze
-non sono uniformi.
-→ Compilare `CALIBRAZIONE.md` (swing_center, lift_level, limiti per FL/FR/ML/MR/RL) usando
-`tools/calibrate_servos.py`, poi riportare i valori in `leg_config.py` (campi di `LEGS`).
+**⚠️ PROSSIMO PASSO (bloccante per alzare il robot / camminata a terra): risolvere il
+BROWNOUT.** Oltre `stance_up` ≈ **−120/−125** i servo "si contorcono" tutti. L'IK è OK fino
+a −130 (verificato) → è **hardware, non codice**: a stance profondo i lift vanno agli estremi
+(~20°/~160°), stallano, picco di corrente, il rail servo cala e il PCA9685/servi glitchano.
+Da fare: (1) test **singolo** servo a 158° (`calibrate_servos.py` → `7 158`) = stallo vs
+potenza; (2) verificare alimentazione servo (BEC/PSU, ampere); (3) fix hardware: 5-6V robusti,
+fili grossi, **condensatore 1000µF+ sul rail** vicino al PCA9685. Quota comoda intanto: −115/−120.
 
-**Poi:** camminata reale a terra (servono le quote di attacco delle spalle), nodo ROS2
-pilotato dal joystick, IMU per leveling, URDF+Gazebo.
+**Poi:** camminata reale a terra (quote di attacco spalle), **nodo teleop** joystick→gait,
+IMU per leveling, URDF+Gazebo.
 
-**Strumenti pronti (standalone, `python3 tools/...`, niente colcon):**
-`calibrate_servos.py` (calibrazione), `test_ik_leg.py <gamba>` (IK su 1 gamba),
-`test_gait_leg.py <gamba>` (gait 1 gamba), `test_gait_all.py <pattern>` (gait 6 gambe).
+**Strumenti (standalone, `python3 tools/...`):** `calibrate_servos.py` (calibrazione guidata
+`leg <NOME>` + modo libero `<ch> <ang>`), `test_ik_leg.py <gamba>`, `test_gait_leg.py <gamba>`,
+`test_gait_all.py <pattern>` (gait 6 gambe, tuning dal vivo).
 
 **Workflow:** sviluppo su Windows `C:\Users\giuli\RobotHex` → `git push` → sul robot
-`git pull` + lancio. (Il nodo ROS2 `leg_control` per ora muove solo la testa.)
+`git pull` + lancio. ⚠️ Editare SOLO su Windows; le prove al volo sul Pi si scartano con
+`git checkout -- <file>` prima del pull. Controller in repo separato `ROS2-Remote-Controller`.
 
 ---
 
