@@ -35,4 +35,9 @@ def generate_launch_description():
             output="screen",
             parameters=[{"enabled": ParameterValue(servos, value_type=bool)}],
         ),
+        Node(
+            package="robot_controllers",
+            executable="camera_manager",
+            output="screen",
+        ),
     ])

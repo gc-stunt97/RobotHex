@@ -1,0 +1,16 @@
+[Unit]
+Description=RobotHex — bringup nodi robot (teleop + servo_node + camera_manager)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=giulio
+# Sorgo ROS2 + workspace, poi lancio il bringup. exec = ros2 launch diventa il processo
+# principale (systemd lo gestisce e riavvia direttamente).
+ExecStart=/bin/bash -c 'source /opt/ros/humble/setup.bash && source /home/giulio/robothex_ws/install/setup.bash && exec ros2 launch robot_controllers robot_bringup.launch.py'
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

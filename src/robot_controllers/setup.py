@@ -28,6 +28,7 @@ setup(
             "leg_control = robot_controllers.leg_control_node:main",
             "teleop = robot_controllers.teleop_node:main",
             "servo_node = robot_controllers.servo_node:main",
+            "camera_manager = robot_controllers.camera_manager:main",
 
         ],
     },
