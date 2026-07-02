@@ -9,8 +9,8 @@ condividono così la stessa pipeline. Questo nodo NON tocca hardware: pura logic
 Mappatura:
   - Joystick DESTRO -> SEMPRE testa pan/tilt (head_pan_joint, head_tilt_joint).
   - Joystick SINISTRO -> dipende dalla modalità (parametro `left_mode`):
-      * 'leg_manual' -> muove la gamba selezionata (`selected_leg`):
-                        stick X = swing (avanti/indietro), stick Y = lift (giù/su)
+      * 'leg_manual' -> muove la gamba selezionata (`selected_leg`, oppure 'ALL'
+                        per tutte insieme): stick X = swing, stick Y = lift
       * 'gait'       -> (in arrivo) avvia/pilota la camminata
 
 I nomi dei giunti coincidono con l'URDF (description/gen_urdf.py) e — per come è
@@ -110,15 +110,20 @@ class Teleop(Node):
 
     def _leg_manual(self):
         leg = self._p("selected_leg")
-        if leg not in LEGS:
-            self.get_logger().warn(f"selected_leg '{leg}' non valida (usa {list(LEGS)})",
+        # stick X -> swing, stick Y -> lift. Segni invertiti (versi verificati sul robot).
+        sw = clamp(-self.left.x * float(self._p("swing_range")), -SWING_LIMIT, SWING_LIMIT)
+        lf = clamp(-self.left.y * float(self._p("lift_range")), LIFT_LIMIT_LO, LIFT_LIMIT_HI)
+        if str(leg).upper() == "ALL":
+            targets = list(LEGS)                    # muovi TUTTE le gambe insieme
+        elif leg in LEGS:
+            targets = [leg]
+        else:
+            self.get_logger().warn(f"selected_leg '{leg}' non valida (usa {list(LEGS)} o ALL)",
                                    throttle_duration_sec=5.0)
             return
-        # stick X (destra+) -> swing (piede avanti/indietro);  stick Y (avanti+) -> lift (piede giù/su)
-        sw = clamp(self.left.x * float(self._p("swing_range")), -SWING_LIMIT, SWING_LIMIT)
-        lf = clamp(self.left.y * float(self._p("lift_range")), LIFT_LIMIT_LO, LIFT_LIMIT_HI)
-        self.joints[f"{leg}_swing"] = sw
-        self.joints[f"{leg}_lift"] = lf
+        for name in targets:
+            self.joints[f"{name}_swing"] = sw
+            self.joints[f"{name}_lift"] = lf
 
     def _publish(self):
         msg = JointState()
