@@ -28,14 +28,16 @@ set -euo pipefail
 
 RECEIVER_HOST="${1:-${RECEIVER_HOST:-}}"
 PORT="${2:-${PORT:-5000}}"
-WIDTH="${WIDTH:-1280}"
-HEIGHT="${HEIGHT:-720}"
+# Default tarati per WiFi 2.4 GHz "normale" (valori confermati usabili sul campo).
+# Su una rete migliore alza pure: WIDTH=1280 HEIGHT=720 BITRATE=3000000 ...
+WIDTH="${WIDTH:-960}"
+HEIGHT="${HEIGHT:-540}"
 FPS="${FPS:-30}"
 DEV="${DEV:-/dev/video0}"
 CODEC="${CODEC:-h264}"          # h264 (efficiente, default) | mjpeg (piu' banda, robusto)
 QUALITY="${QUALITY:-65}"        # qualita' JPEG (mjpeg)
-BITRATE="${BITRATE:-2000000}"   # bit/s (h264): basso = poche perdite sul WiFi
-KEYINT="${KEYINT:-$(( FPS / 2 ))}"  # keyframe ogni N frame (h264): basso = recupero rapido
+BITRATE="${BITRATE:-1000000}"   # bit/s (h264): basso = poche perdite sul WiFi
+KEYINT="${KEYINT:-$(( FPS / 3 ))}"  # keyframe ogni N frame (h264): basso = recupero rapido
 
 if [ -z "${RECEIVER_HOST}" ]; then
   echo "Uso: $0 <IP_CONTROLLER> [PORTA]   (o export RECEIVER_HOST=...)" >&2
