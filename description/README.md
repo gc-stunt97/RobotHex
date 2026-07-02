@@ -25,6 +25,13 @@ python3 validate_urdf.py     # verifica
 L'URDF importa i numeri da `leg_config.py`, quindi se cambi un offset o aggiungi
 gambe non serve toccare l'XML: rigeneri e basta.
 
+## Deploy sul controller
+
+Questa cartella è la **fonte di verità** (generatore + modello). Per visualizzare
+sul display 7" del controller, i 3 file runtime (`genghis.urdf`,
+`display.launch.py`, `genghis.rviz`) sono **copiati** nel repo del controller
+`ROS2-Remote-Controller` in `viz/`. Se il modello cambia: rigenera qui e ricopia lì.
+
 ## Visualizzare in RViz
 
 Serve una macchina con **ROS2 Humble + desktop** (RViz non gira comodo sui Pi;
