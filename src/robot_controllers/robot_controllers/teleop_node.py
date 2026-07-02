@@ -11,8 +11,9 @@ Mappatura:
   - Joystick SINISTRO -> dipende dalla modalità (parametro `left_mode`):
       * 'leg_manual' -> muove la gamba selezionata (`selected_leg`, oppure 'ALL'
                         per tutte insieme): stick X = swing, stick Y = lift
-      * 'gait'       -> camminata: stick Y = acceleratore (avanti/indietro), pattern
-                        e parametri (stride, stance_up, swing_lift, period, duty) come
+      * 'gait'       -> camminata: stick Y = avanti/indietro, stick X = STERZA
+                        (stride differenziale L/R: a fondo gira sul posto). Pattern e
+                        parametri (stride, stance_up, swing_lift, period, duty) come
                         parametri. Usa gait.py + kinematics.py, come tools/test_gait_all.py.
 
 I nomi dei giunti coincidono con l'URDF (description/gen_urdf.py) e — per come è
@@ -152,19 +153,26 @@ class Teleop(Node):
                                    throttle_duration_sec=5.0)
             return
 
-        # stick SX Y = acceleratore: avanti (+) cammina avanti, indietro (-) all'indietro,
-        # centro = fermo (la fase non avanza). Fuori dalla zona morta.
-        throttle = self.left.y if abs(self.left.y) > DEADZONE else 0.0
+        # stick SX: Y = avanti/indietro (drive), X = sterza (steer, destra +).
+        drive = self.left.y if abs(self.left.y) > DEADZONE else 0.0
+        steer = self.left.x if abs(self.left.x) > DEADZONE else 0.0
+        # STRIDE DIFFERENZIALE per lato (come un cingolato): a sterzare a destra il lato
+        # sinistro spinge piu' avanti e il destro indietro -> imbardata. La DIREZIONE sta
+        # nel SEGNO dello stride (stance front->back = spinge avanti); la fase avanza sempre.
+        fL = clamp(drive + steer, -1.0, 1.0)
+        fR = clamp(drive - steer, -1.0, 1.0)
+        speed = max(abs(fL), abs(fR))        # cadenza proporzionale al comando
         period = max(float(self._p("period")), 0.1)
-        self.phase = (self.phase + (self.dt / period) * throttle) % 1.0
+        self.phase = (self.phase + (self.dt / period) * speed) % 1.0
 
-        stride = float(self._p("stride"))
+        base_stride = float(self._p("stride"))
         stance_up = float(self._p("stance_up"))
         lift = float(self._p("swing_lift"))
         duty = float(self._p("duty"))
 
-        for name in LEGS:
+        for name, cfg in LEGS.items():
             off_fwd = offset_fwd_for(name)
+            stride = base_stride * (fL if cfg.side == "L" else fR)
             leg_phase = self.phase + offsets.get(name, 0.0)
             fwd, up = foot_trajectory(leg_phase, off_fwd, stride, stance_up, lift, duty)
             try:
