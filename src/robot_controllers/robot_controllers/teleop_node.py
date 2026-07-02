@@ -11,7 +11,9 @@ Mappatura:
   - Joystick SINISTRO -> dipende dalla modalità (parametro `left_mode`):
       * 'leg_manual' -> muove la gamba selezionata (`selected_leg`, oppure 'ALL'
                         per tutte insieme): stick X = swing, stick Y = lift
-      * 'gait'       -> (in arrivo) avvia/pilota la camminata
+      * 'gait'       -> camminata: stick Y = acceleratore (avanti/indietro), pattern
+                        e parametri (stride, stance_up, swing_lift, period, duty) come
+                        parametri. Usa gait.py + kinematics.py, come tools/test_gait_all.py.
 
 I nomi dei giunti coincidono con l'URDF (description/gen_urdf.py) e — per come è
 costruito l'URDF — il valore del giunto È l'angolo LOGICO del codice:
@@ -24,12 +26,20 @@ Modalità e gamba selezionata sono PARAMETRI, modificabili a caldo:
 (In futuro li piloteranno i tastini del joystick, dopo il flash STM32.)
 """
 
+import math
+
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import JointState
 
-from robot_controllers.leg_config import LEGS
+from robot_controllers.leg_config import (
+    LEGS, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, offset_fwd_for,
+)
+from robot_controllers.kinematics import inverse_kinematics
+from robot_controllers.gait import foot_trajectory, GAITS
+
+DEADZONE = 0.08   # zona morta dello stick per l'acceleratore del gait
 
 
 def clamp(v, lo, hi):
@@ -56,6 +66,13 @@ class Teleop(Node):
         self.declare_parameter("tilt_range", 0.6)
         self.declare_parameter("invert_tilt", False)
         self.declare_parameter("rate_hz", 30.0)
+        # parametri gait (modalita' 'gait'); stessi significati di tools/test_gait_all.py
+        self.declare_parameter("gait_pattern", "ripple")   # tripod | ripple | wave
+        self.declare_parameter("stride", 60.0)             # mm, lunghezza passo
+        self.declare_parameter("stance_up", -100.0)        # mm, altezza corpo (piu' neg = piu' alto)
+        self.declare_parameter("swing_lift", 45.0)         # mm, sollevamento piede in aria
+        self.declare_parameter("period", 2.0)              # s, durata ciclo
+        self.declare_parameter("duty", 0.5)                # frazione del ciclo a terra
 
         # ultimo valore letto dai due stick
         self.left = Point()
@@ -74,7 +91,9 @@ class Teleop(Node):
         self.create_subscription(Point, "left_joystick_data", self._on_left, 10)
 
         rate = float(self.get_parameter("rate_hz").value)
-        self.create_timer(1.0 / rate, self._tick)
+        self.dt = 1.0 / rate
+        self.phase = 0.0        # fase del gait 0->1 (avanza con l'acceleratore)
+        self.create_timer(self.dt, self._tick)
         self.get_logger().info(
             f"teleop avviato — DX=testa, SX={self._p('left_mode')} su gamba {self._p('selected_leg')}"
         )
@@ -104,7 +123,7 @@ class Teleop(Node):
         if mode == "leg_manual":
             self._leg_manual()
         elif mode == "gait":
-            pass  # in arrivo: gait.py -> (alpha,beta) per gamba
+            self._gait()
 
         self._publish()
 
@@ -124,6 +143,37 @@ class Teleop(Node):
         for name in targets:
             self.joints[f"{name}_swing"] = sw
             self.joints[f"{name}_lift"] = lf
+
+    def _gait(self):
+        pattern = self._p("gait_pattern")
+        offsets = GAITS.get(pattern)
+        if offsets is None:
+            self.get_logger().warn(f"gait_pattern '{pattern}' sconosciuto (usa {list(GAITS)})",
+                                   throttle_duration_sec=5.0)
+            return
+
+        # stick SX Y = acceleratore: avanti (+) cammina avanti, indietro (-) all'indietro,
+        # centro = fermo (la fase non avanza). Fuori dalla zona morta.
+        throttle = self.left.y if abs(self.left.y) > DEADZONE else 0.0
+        period = max(float(self._p("period")), 0.1)
+        self.phase = (self.phase + (self.dt / period) * throttle) % 1.0
+
+        stride = float(self._p("stride"))
+        stance_up = float(self._p("stance_up"))
+        lift = float(self._p("swing_lift"))
+        duty = float(self._p("duty"))
+
+        for name in LEGS:
+            off_fwd = offset_fwd_for(name)
+            leg_phase = self.phase + offsets.get(name, 0.0)
+            fwd, up = foot_trajectory(leg_phase, off_fwd, stride, stance_up, lift, duty)
+            try:
+                alpha, beta, _ = inverse_kinematics(
+                    fwd, up, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, off_fwd)
+            except ValueError:
+                continue   # punto fuori portata: salta questa gamba per questo tick
+            self.joints[f"{name}_swing"] = clamp(math.radians(alpha), -SWING_LIMIT, SWING_LIMIT)
+            self.joints[f"{name}_lift"] = clamp(math.radians(beta), LIFT_LIMIT_LO, LIFT_LIMIT_HI)
 
     def _publish(self):
         msg = JointState()
