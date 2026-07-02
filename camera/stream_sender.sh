@@ -32,9 +32,10 @@ WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FPS="${FPS:-30}"
 DEV="${DEV:-/dev/video0}"
-CODEC="${CODEC:-mjpeg}"
+CODEC="${CODEC:-h264}"          # h264 (efficiente, default) | mjpeg (piu' banda, robusto)
 QUALITY="${QUALITY:-65}"        # qualita' JPEG (mjpeg)
-BITRATE="${BITRATE:-3000000}"   # bit/s (h264)
+BITRATE="${BITRATE:-2000000}"   # bit/s (h264): basso = poche perdite sul WiFi
+KEYINT="${KEYINT:-$(( FPS / 2 ))}"  # keyframe ogni N frame (h264): basso = recupero rapido
 
 if [ -z "${RECEIVER_HOST}" ]; then
   echo "Uso: $0 <IP_CONTROLLER> [PORTA]   (o export RECEIVER_HOST=...)" >&2
@@ -68,7 +69,7 @@ case "${CODEC}" in
         udpsink host="${RECEIVER_HOST}" port="${PORT}" sync=false
     else
       exec gst-launch-1.0 -v \
-        v4l2src device="${DEV}" extra-controls="controls,video_bitrate=${BITRATE},h264_i_frame_period=${FPS}" ! \
+        v4l2src device="${DEV}" extra-controls="controls,video_bitrate=${BITRATE},h264_i_frame_period=${KEYINT}" ! \
         "video/x-h264,width=${WIDTH},height=${HEIGHT},framerate=${FPS}/1" ! \
         h264parse ! rtph264pay config-interval=1 pt=96 mtu=1400 ! \
         udpsink host="${RECEIVER_HOST}" port="${PORT}" sync=false
