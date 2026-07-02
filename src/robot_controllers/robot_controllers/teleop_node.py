@@ -41,6 +41,7 @@ from robot_controllers.kinematics import inverse_kinematics
 from robot_controllers.gait import foot_trajectory, GAITS
 
 DEADZONE = 0.08   # zona morta dello stick per l'acceleratore del gait
+SETTLE_TIME = 0.4 # s per POSARE le zampe a terra quando si rilascia lo stick (gait)
 
 
 def clamp(v, lo, hi):
@@ -94,6 +95,12 @@ class Teleop(Node):
         rate = float(self.get_parameter("rate_hz").value)
         self.dt = 1.0 / rate
         self.phase = 0.0        # fase del gait 0->1 (avanza con l'acceleratore)
+        # Stato del SETTLE (gait): comandi effettivi per lato (rampati) e guadagno di
+        # sollevamento. Al rilascio dello stick vanno a 0 -> il robot posa TUTTE le zampe
+        # a terra (posa neutra livellata) invece di restare fermo a forzare a meta' ciclo.
+        self.fL = 0.0
+        self.fR = 0.0
+        self.gait_gain = 0.0
         self.create_timer(self.dt, self._tick)
         self.get_logger().info(
             f"teleop avviato — DX=testa, SX={self._p('left_stick_mode')} su gamba {self._p('selected_leg')}"
@@ -129,17 +136,20 @@ class Teleop(Node):
         self._publish()
 
     def _leg_manual(self):
-        leg = self._p("selected_leg")
+        sel = str(self._p("selected_leg")).upper()
         # stick X -> swing, stick Y -> lift. Segni invertiti (versi verificati sul robot).
         sw = clamp(-self.left.x * float(self._p("swing_range")), -SWING_LIMIT, SWING_LIMIT)
         lf = clamp(-self.left.y * float(self._p("lift_range")), LIFT_LIMIT_LO, LIFT_LIMIT_HI)
-        if str(leg).upper() == "ALL":
+        # selected_leg accetta: 'ALL', una gamba ('FR'), o piu' gambe separate da virgola
+        # ('FL,MR,RR') -> cosi' la plancia puo' spuntarne piu' di una insieme.
+        if sel == "ALL":
             targets = list(LEGS)                    # muovi TUTTE le gambe insieme
-        elif leg in LEGS:
-            targets = [leg]
         else:
-            self.get_logger().warn(f"selected_leg '{leg}' non valida (usa {list(LEGS)} o ALL)",
-                                   throttle_duration_sec=5.0)
+            targets = [t for t in (s.strip() for s in sel.split(",")) if t in LEGS]
+        if not targets:
+            self.get_logger().warn(
+                f"selected_leg '{sel}' non valida (usa {list(LEGS)}, ALL o CSV es. 'FL,MR')",
+                throttle_duration_sec=5.0)
             return
         for name in targets:
             self.joints[f"{name}_swing"] = sw
@@ -159,20 +169,33 @@ class Teleop(Node):
         # STRIDE DIFFERENZIALE per lato (come un cingolato): a sterzare a destra il lato
         # sinistro spinge piu' avanti e il destro indietro -> imbardata. La DIREZIONE sta
         # nel SEGNO dello stride (stance front->back = spinge avanti); la fase avanza sempre.
-        fL = clamp(drive + steer, -1.0, 1.0)
-        fR = clamp(drive - steer, -1.0, 1.0)
-        speed = max(abs(fL), abs(fR))        # cadenza proporzionale al comando
+        tgt_fL = clamp(drive + steer, -1.0, 1.0)
+        tgt_fR = clamp(drive - steer, -1.0, 1.0)
+
+        # --- SETTLE: allo stick a zero, POSA le zampe a terra (non congela a meta' ciclo) ---
+        # Rampiamo in SETTLE_TIME s i comandi effettivi (fL/fR) e il guadagno di sollevamento
+        # (gait_gain) verso i target. Quando ci si ferma tutti e tre vanno a 0: la fase
+        # continua a girare finche' le zampe in aria atterrano, poi con stride=0 e lift=0
+        # ogni piede resta fermo a (center_fwd, stance_up) = posa neutra livellata a terra.
+        # In marcia dà anche un avvio/arresto morbido (niente scatti).
+        step = self.dt / SETTLE_TIME
+        self.fL += clamp(tgt_fL - self.fL, -step, step)
+        self.fR += clamp(tgt_fR - self.fR, -step, step)
+        moving = abs(tgt_fL) > 1e-3 or abs(tgt_fR) > 1e-3
+        self.gait_gain += clamp((1.0 if moving else 0.0) - self.gait_gain, -step, step)
+
+        speed = max(abs(self.fL), abs(self.fR))   # cadenza ~ comando; ->0 quando posato
         period = max(float(self._p("period")), 0.1)
         self.phase = (self.phase + (self.dt / period) * speed) % 1.0
 
         base_stride = float(self._p("stride"))
         stance_up = float(self._p("stance_up"))
-        lift = float(self._p("swing_lift"))
+        lift = float(self._p("swing_lift")) * self.gait_gain   # ->0 al rilascio: piedi giu'
         duty = float(self._p("duty"))
 
         for name, cfg in LEGS.items():
             off_fwd = offset_fwd_for(name)
-            stride = base_stride * (fL if cfg.side == "L" else fR)
+            stride = base_stride * (self.fL if cfg.side == "L" else self.fR)
             leg_phase = self.phase + offsets.get(name, 0.0)
             fwd, up = foot_trajectory(leg_phase, off_fwd, stride, stance_up, lift, duty)
             try:
