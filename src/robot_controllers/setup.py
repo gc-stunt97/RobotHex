@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
 
             "leg_control = robot_controllers.leg_control_node:main",
+            "teleop = robot_controllers.teleop_node:main",
 
         ],
     },
