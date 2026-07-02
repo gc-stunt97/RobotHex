@@ -10,7 +10,7 @@ Mappatura:
   - Joystick DESTRO -> SEMPRE testa pan/tilt (head_pan_joint, head_tilt_joint).
   - Joystick SINISTRO -> dipende dalla modalità (parametro `left_mode`):
       * 'leg_manual' -> muove la gamba selezionata (`selected_leg`):
-                        stick Y = swing (avanti/indietro), stick X = lift (giù/su)
+                        stick X = swing (avanti/indietro), stick Y = lift (giù/su)
       * 'gait'       -> (in arrivo) avvia/pilota la camminata
 
 I nomi dei giunti coincidono con l'URDF (description/gen_urdf.py) e — per come è
@@ -114,9 +114,9 @@ class Teleop(Node):
             self.get_logger().warn(f"selected_leg '{leg}' non valida (usa {list(LEGS)})",
                                    throttle_duration_sec=5.0)
             return
-        # stick Y (avanti+) -> swing (piede avanti);  stick X (destra+) -> lift (piede giù)
-        sw = clamp(self.left.y * float(self._p("swing_range")), -SWING_LIMIT, SWING_LIMIT)
-        lf = clamp(self.left.x * float(self._p("lift_range")), LIFT_LIMIT_LO, LIFT_LIMIT_HI)
+        # stick X (destra+) -> swing (piede avanti/indietro);  stick Y (avanti+) -> lift (piede giù/su)
+        sw = clamp(self.left.x * float(self._p("swing_range")), -SWING_LIMIT, SWING_LIMIT)
+        lf = clamp(self.left.y * float(self._p("lift_range")), LIFT_LIMIT_LO, LIFT_LIMIT_HI)
         self.joints[f"{leg}_swing"] = sw
         self.joints[f"{leg}_lift"] = lf
 
