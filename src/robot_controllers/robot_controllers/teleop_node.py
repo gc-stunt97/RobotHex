@@ -8,7 +8,7 @@ condividono così la stessa pipeline. Questo nodo NON tocca hardware: pura logic
 
 Mappatura:
   - Joystick DESTRO -> SEMPRE testa pan/tilt (head_pan_joint, head_tilt_joint).
-  - Joystick SINISTRO -> dipende dalla modalità (parametro `left_mode`):
+  - Joystick SINISTRO -> dipende dalla modalità (parametro `left_stick_mode`):
       * 'leg_manual' -> muove la gamba selezionata (`selected_leg`, oppure 'ALL'
                         per tutte insieme): stick X = swing, stick Y = lift
       * 'gait'       -> camminata: stick Y = avanti/indietro, stick X = STERZA
@@ -23,7 +23,7 @@ Valori pubblicati in RADIANTI.
 
 Modalità e gamba selezionata sono PARAMETRI, modificabili a caldo:
     ros2 param set /teleop selected_leg FR
-    ros2 param set /teleop left_mode gait
+    ros2 param set /teleop left_stick_mode gait
 (In futuro li piloteranno i tastini del joystick, dopo il flash STM32.)
 """
 
@@ -59,7 +59,7 @@ class Teleop(Node):
         super().__init__("teleop")
 
         # --- parametri (regolabili a caldo: ros2 param set /teleop <nome> <val>) ---
-        self.declare_parameter("left_mode", "leg_manual")   # 'leg_manual' | 'gait'
+        self.declare_parameter("left_stick_mode", "leg_manual")   # 'leg_manual' | 'gait'
         self.declare_parameter("selected_leg", "FL")        # gamba pilotata in leg_manual
         self.declare_parameter("swing_range", 0.7)          # rad a fondo corsa stick
         self.declare_parameter("lift_range", 0.7)
@@ -96,7 +96,7 @@ class Teleop(Node):
         self.phase = 0.0        # fase del gait 0->1 (avanza con l'acceleratore)
         self.create_timer(self.dt, self._tick)
         self.get_logger().info(
-            f"teleop avviato — DX=testa, SX={self._p('left_mode')} su gamba {self._p('selected_leg')}"
+            f"teleop avviato — DX=testa, SX={self._p('left_stick_mode')} su gamba {self._p('selected_leg')}"
         )
 
     def _p(self, name):
@@ -120,7 +120,7 @@ class Teleop(Node):
                                                -TILT_LIMIT, TILT_LIMIT)
 
         # --- stick sinistro: dipende dalla modalità ---
-        mode = self._p("left_mode")
+        mode = self._p("left_stick_mode")
         if mode == "leg_manual":
             self._leg_manual()
         elif mode == "gait":
