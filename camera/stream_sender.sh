@@ -28,7 +28,7 @@ WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FPS="${FPS:-30}"
 DEV="${DEV:-/dev/video0}"
-BITRATE="${BITRATE:-4000000}"   # usato solo nel fallback software
+BITRATE="${BITRATE:-3000000}"   # bit/s H.264 (cappa il flusso per stare nel WiFi)
 
 if [ -z "${RECEIVER_HOST}" ]; then
   echo "Uso: $0 <IP_CONTROLLER> [PORTA]   (o export RECEIVER_HOST=...)" >&2
@@ -50,15 +50,17 @@ if [ "${ENCODE:-hw}" = "sw" ]; then
     videoconvert ! \
     openh264enc bitrate="${BITRATE}" ! \
     h264parse ! \
-    rtph264pay config-interval=1 pt=96 ! \
+    rtph264pay config-interval=1 pt=96 mtu=1400 ! \
     udpsink host="${RECEIVER_HOST}" port="${PORT}" sync=false
 else
   # HARDWARE: la GPU encoda H.264 direttamente (il device espone video/x-h264).
+  # extra-controls: cappa il bitrate e mette un keyframe ogni secondo (recupero rapido).
+  # rtph264pay mtu=1400: pacchetti sotto la MTU -> niente frammentazione IP sul WiFi.
   # config-interval=1 reinvia SPS/PPS: un receiver che si collega dopo decodifica subito.
   exec gst-launch-1.0 -v \
-    v4l2src device="${DEV}" ! \
+    v4l2src device="${DEV}" extra-controls="controls,video_bitrate=${BITRATE},h264_i_frame_period=${FPS}" ! \
     "video/x-h264,width=${WIDTH},height=${HEIGHT},framerate=${FPS}/1" ! \
     h264parse ! \
-    rtph264pay config-interval=1 pt=96 ! \
+    rtph264pay config-interval=1 pt=96 mtu=1400 ! \
     udpsink host="${RECEIVER_HOST}" port="${PORT}" sync=false
 fi
