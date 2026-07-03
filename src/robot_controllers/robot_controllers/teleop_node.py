@@ -51,8 +51,11 @@ def clamp(v, lo, hi):
 # Limiti giunti (rad), coerenti con l'URDF (description/gen_urdf.py)
 SWING_LIMIT = 0.9
 LIFT_LIMIT_LO, LIFT_LIMIT_HI = -0.4, 1.4
-PAN_LIMIT = 1.55
-TILT_LIMIT = 0.8
+# Testa: range MASSIMO simmetrico consentito dai finecorsa servo (0-180) dati i centri
+# di calibrazione (servo_node: pan_center=100 -> bordo vicino 180 -> ±80°; tilt_center=90 -> ±90°).
+# Nessun limite meccanico: e' l'escursione elettronica piena del servo.
+PAN_LIMIT = math.radians(80.0)    # ±80° dal centro  (servo pan  20..180)
+TILT_LIMIT = math.radians(90.0)   # ±90° dal centro  (servo tilt  0..180)
 
 
 class Teleop(Node):
@@ -64,8 +67,8 @@ class Teleop(Node):
         self.declare_parameter("selected_leg", "FL")        # gamba pilotata in leg_manual
         self.declare_parameter("swing_range", 0.7)          # rad a fondo corsa stick
         self.declare_parameter("lift_range", 0.7)
-        self.declare_parameter("pan_range", 1.2)
-        self.declare_parameter("tilt_range", 0.6)
+        self.declare_parameter("pan_range", math.radians(80.0))   # a fondo stick = range max testa
+        self.declare_parameter("tilt_range", math.radians(90.0))
         self.declare_parameter("invert_tilt", False)
         self.declare_parameter("rate_hz", 30.0)
         # parametri gait (modalita' 'gait'); stessi significati di tools/test_gait_all.py
