@@ -13,8 +13,12 @@ bug noti del codice e roadmap. È la fonte di verità del progetto.
 
 - **Cos'è:** replica dell'esapode *Genghis* (Brooks/MIT 1991). 6 zampe × 2 servo = 12 servo,
   PCA9685 via I2C su Raspberry Pi 4. ROS2 (`rclpy`). Controller remoto separato via WiFi.
-- **Obiettivo della ripresa:** camminata **fluida** con cinematica inversa (IK) + gait engine
-  a fase 0→1 con offset. Gait preferito: **ripple**. L'attuale tripode a pose discrete è rigido.
+- **Gait engine:** **fatto e funzionante.** `gait.py` = traiettoria piede a fase 0→1
+  (stance lineare + swing con arco sin), pattern **tripod/ripple/wave** via offset di fase,
+  parametrico (stride/stance_up/swing_lift/duty). Integrato in `teleop_node` (modalità GAIT)
+  → IK → `/joint_states` → `servo_node`, con **sterzata** differenziale e tuning dal vivo
+  (`tools/test_gait_all.py`). Gait preferito: **ripple**. Manca **solo** l'esecuzione a terra
+  sotto carico, bloccata dal **brownout** (hardware).
 - **Mappatura/inversione dei 12 servo:** già fatta e funzionante (handbook sez. 3) — è la base.
 
 ## Stato e attenzioni

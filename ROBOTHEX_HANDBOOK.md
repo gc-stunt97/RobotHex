@@ -57,10 +57,14 @@ con la **stessa meccanica/struttura** dell'originale. Costruito qualche anno fa.
 Obiettivo originale: sperimentare i **gait di camminata** a sei zampe e pilotarlo
 da remoto via WiFi con un controller autocostruito.
 
-Stato attuale: progetto **in pausa**, hardware completo e funzionante, infrastruttura
-ROS2 predisposta. **Manca il gait engine "serio"**: l'unica camminata implementata è
-un tripode a pose discrete (rigido, "macchinoso"). Obiettivo della ripresa: camminata
-fluida con cinematica inversa + gait engine (tripode fluido, **ripple** ← preferito, wave).
+Stato attuale: hardware completo e funzionante, infrastruttura ROS2 completa. **Il gait
+engine "serio" c'è**: `gait.py` genera la traiettoria del piede a **fase 0→1** (stance
+lineare + swing con arco sinusoidale), con i pattern **tripod/ripple/wave** definiti come
+offset di fase e parametri live (stride/stance_up/swing_lift/duty). È integrato end-to-end
+(`teleop_node` modalità GAIT → IK → `/joint_states` → `servo_node`), con **sterzata**
+differenziale e tuning da tastiera (`tools/test_gait_all.py`). Gait preferito: **ripple**.
+Sopra ci sono già teleop (gait/manuale/**body-pose**), camera **FPV**, plancia, systemd.
+**Unico blocco alla camminata a terra sotto carico: il brownout (hardware).**
 
 ---
 
