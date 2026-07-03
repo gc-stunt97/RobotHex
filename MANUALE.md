@@ -104,7 +104,9 @@ ROS serve solo a *telecomandare* il sender (`camera_manager`). Vedi `camera/READ
      - **Corpo**: posa del corpo a **piedi fermi** (i 6 piedi restano a terra). **X=roll**,
        **Y=pitch**, **manopola Z=yaw** → inclini/ruoti il corpo sul posto. Escursione regolabile
        coi parametri `body_roll_range`/`body_pitch_range`/`body_yaw_range`. Coi 2 DOF il piede
-       può scivolare un filo di lato su angoli ampi (limite fisico, non un bug).
+       può scivolare un filo di lato su angoli ampi (limite fisico, non un bug). Ai limiti di
+       `stance_up` il corpo si **abbassa in automatico** (fulcro adattivo) per non far saturare/
+       impennare le gambe: ruota "come un'asta tra due piani" sfruttando tutto il range.
    - **Toggle SIM ⟷ REAL**: **SIM** = solo RViz (servi fermi). **REAL** (con conferma) = muove i
      **servi veri** con lo stesso comando. Grazie allo slew-rate non scattano.
 

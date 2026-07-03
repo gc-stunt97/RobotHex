@@ -75,10 +75,16 @@ LIFT_LIMIT_LO, LIFT_LIMIT_HI = -0.4, 1.4
 PAN_LIMIT = math.radians(80.0)    # ±80° dal centro  (servo pan  20..180)
 TILT_LIMIT = math.radians(90.0)   # ±90° dal centro  (servo tilt  0..180)
 # Modalita' MANUALE: limiti ALLARGATI fino all'escursione fisica del servo. Il servo_node fa
-# la guardia finale per-gamba (SAFE 10-170° -> ~±80° dal centro calibrato), quindi in manuale
+# la guardia finale per-gamba (SAFE 10-170° -> centrato sulla calibrazione), quindi in manuale
 # (posizionamento/test) si raggiungono gli estremi; gait/body restano coi limiti prudenti sopra.
-MANUAL_SWING_LIMIT = math.radians(80.0)
-MANUAL_LIFT_LO, MANUAL_LIFT_HI = math.radians(-80.0), math.radians(95.0)
+MANUAL_SWING_LIMIT = math.radians(90.0)
+MANUAL_LIFT_LO, MANUAL_LIFT_HI = math.radians(-90.0), math.radians(95.0)
+
+# Portata verticale del piede (mm) per il FULCRO ADATTIVO della modalita' 'body': oltre questi
+# valori l'IK va fuori portata. UP_FLOOR = gamba quasi tutta stesa in giu'; UP_CEIL = piede piu'
+# alto raggiungibile col beta minimo consentito. Usati per la compensazione d'altezza.
+UP_FLOOR = -0.999 * LEG_LENGTH_MM
+UP_CEIL = -LEG_LENGTH_MM * math.sin(LIFT_LIMIT_LO)
 
 
 class Teleop(Node):
@@ -88,8 +94,8 @@ class Teleop(Node):
         # --- parametri (regolabili a caldo: ros2 param set /teleop <nome> <val>) ---
         self.declare_parameter("left_stick_mode", "leg_manual")   # 'leg_manual' | 'gait'
         self.declare_parameter("selected_leg", "FL")        # gamba pilotata in leg_manual
-        self.declare_parameter("swing_range", math.radians(80.0))  # manuale: fondo stick = max servo
-        self.declare_parameter("lift_range", math.radians(80.0))   #   (abbassa se troppo sensibile)
+        self.declare_parameter("swing_range", math.radians(90.0))  # manuale: fondo stick = max servo
+        self.declare_parameter("lift_range", math.radians(90.0))   #   (abbassa se troppo sensibile)
         self.declare_parameter("pan_range", math.radians(80.0))   # a fondo stick = range max testa
         self.declare_parameter("tilt_range", math.radians(90.0))
         self.declare_parameter("invert_tilt", False)
@@ -110,10 +116,21 @@ class Teleop(Node):
         self.left = Point()
         self.right = Point()
 
-        # stato dei giunti (rad): 12 gambe + 2 testa, inizializzati a neutro.
-        # I giunti NON toccati in un tick mantengono il valore (si "posano").
-        self.joints = {f"{n}_swing": 0.0 for n in LEGS}
-        self.joints.update({f"{n}_lift": 0.0 for n in LEGS})
+        # stato dei giunti (rad): 12 gambe + 2 testa. Le gambe partono in POSA D'APPOGGIO
+        # (stance), NON a zero (=orizzontali): cosi' all'avvio e all'attivazione REAL sono
+        # gia' in appoggio, coerenti con gait/body/manuale. Una gamba NON toccata in un tick
+        # mantiene il valore (si "posa"), quindi resta comunque in appoggio.
+        self.joints = {}
+        stance0 = float(self.get_parameter("stance_up").value)
+        for name in LEGS:
+            off_fwd = offset_fwd_for(name)
+            try:
+                a, b, _ = inverse_kinematics(
+                    off_fwd, stance0, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, off_fwd)
+            except ValueError:
+                a, b = 0.0, 0.0
+            self.joints[f"{name}_swing"] = clamp(math.radians(a), -SWING_LIMIT, SWING_LIMIT)
+            self.joints[f"{name}_lift"] = clamp(math.radians(b), LIFT_LIMIT_LO, LIFT_LIMIT_HI)
         self.joints["head_pan_joint"] = 0.0
         self.joints["head_tilt_joint"] = 0.0
         self.names = list(self.joints.keys())
@@ -261,26 +278,41 @@ class Teleop(Node):
         yaw = clamp(self.left.z, -1.0, 1.0) * float(self._p("body_yaw_range"))
         stance_up = float(self._p("stance_up"))
 
+        # PASSATA 1: dove finisce ogni piede nel frame corpo RUOTATO attorno al centro.
+        poses = {}   # name -> (fwd, up, off_fwd)
         for name, cfg in LEGS.items():
             s = 1.0 if cfg.side == "L" else -1.0
             hx, hy, _ = hip_position(name)
             off_fwd = offset_fwd_for(name)
-            # 1) posa NEUTRA del piede nel frame corpo a riposo (= mondo): stessa posa a cui
-            #    tornano gait/manuale (fwd=off_fwd, up=stance_up). L'IK ci da' anche 'out'.
+            # posa neutra del piede nel frame corpo a riposo (= mondo): stessa a cui tornano
+            # gait/manuale (fwd=off_fwd, up=stance_up). L'IK ci da' anche 'out'.
             try:
                 _, _, out0 = inverse_kinematics(
                     off_fwd, stance_up, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, off_fwd)
             except ValueError:
                 continue
             foot_world = (hx + off_fwd, hy + s * out0, stance_up)
-            # 2) dove si vede quel piede nel frame corpo RUOTATO
-            px, py, pz = world_to_body(foot_world, roll, pitch, yaw)
-            # 3) rispetto alla spalla -> (fwd, up) per l'IK (out consegue)
-            fwd = px - hx
-            up = pz
+            px, _, pz = world_to_body(foot_world, roll, pitch, yaw)
+            poses[name] = (px - hx, pz, off_fwd)   # (fwd, up, off_fwd)
+        if not poses:
+            return
+
+        # FULCRO ADATTIVO: se la rotazione porterebbe la gamba piu' profonda oltre la portata
+        # (piede troppo in basso -> impennata), ALZA/ABBASSA il corpo (shift verticale uniforme)
+        # quel tanto che basta. Equivale a spostare il fulcro sul lato saturo ("asta tra due
+        # piani"): nessuna gamba satura, la rotazione si mantiene, si sfrutta tutto il range.
+        ups = [up for _, up, _ in poses.values()]
+        shift = 0.0
+        if min(ups) < UP_FLOOR:
+            shift = UP_FLOOR - min(ups)
+        elif max(ups) > UP_CEIL:
+            shift = UP_CEIL - max(ups)
+
+        # PASSATA 2: IK con l'altezza compensata.
+        for name, (fwd, up, off_fwd) in poses.items():
             try:
                 alpha, beta, _ = inverse_kinematics(
-                    fwd, up, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, off_fwd)
+                    fwd, up + shift, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, off_fwd)
             except ValueError:
                 continue   # posa fuori portata per questa gamba: la tiene ferma
             self.joints[f"{name}_swing"] = clamp(math.radians(alpha), -SWING_LIMIT, SWING_LIMIT)
