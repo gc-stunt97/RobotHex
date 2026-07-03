@@ -93,7 +93,11 @@ ROS serve solo a *telecomandare* il sender (`camera_manager`). Vedi `camera/READ
    - **Joystick DESTRO** → testa pan/tilt (sempre attivo).
    - **Joystick SINISTRO** → dipende dalla **Modalità** (bottone plancia):
      - **Manuale**: muove la/le **Gambe** selezionate (X=swing avanti/indietro, Y=lift su/giù).
-       Sulla plancia si spuntano **più gambe insieme** (o `ALL`).
+       Sulla plancia si spuntano **più gambe insieme** (o `ALL`). Parte dalla posa impostata
+       da **`stance_up`** (a stick fermo la gamba resta all'altezza d'appoggio, non salta su);
+       i **limiti sono allargati** fino all'escursione fisica del servo (guardia finale nel
+       `servo_node`) → si raggiungono gli estremi calibrati. `swing_range`/`lift_range` = escursione
+       a fondo stick (default = max; abbassali se troppo sensibile).
      - **Gait**: **Y = avanti/indietro**, **X = sterza** (a fondo gira sul posto). Scegli il
        **Pattern** (tripod/ripple/wave) e regola gli **slider** (stride/period/duty/stance_up).
        Allo stick a zero il robot **posa le zampe a terra** (posa livellata), non resta a metà ciclo.

@@ -74,6 +74,11 @@ LIFT_LIMIT_LO, LIFT_LIMIT_HI = -0.4, 1.4
 # Nessun limite meccanico: e' l'escursione elettronica piena del servo.
 PAN_LIMIT = math.radians(80.0)    # ±80° dal centro  (servo pan  20..180)
 TILT_LIMIT = math.radians(90.0)   # ±90° dal centro  (servo tilt  0..180)
+# Modalita' MANUALE: limiti ALLARGATI fino all'escursione fisica del servo. Il servo_node fa
+# la guardia finale per-gamba (SAFE 10-170° -> ~±80° dal centro calibrato), quindi in manuale
+# (posizionamento/test) si raggiungono gli estremi; gait/body restano coi limiti prudenti sopra.
+MANUAL_SWING_LIMIT = math.radians(80.0)
+MANUAL_LIFT_LO, MANUAL_LIFT_HI = math.radians(-80.0), math.radians(95.0)
 
 
 class Teleop(Node):
@@ -83,8 +88,8 @@ class Teleop(Node):
         # --- parametri (regolabili a caldo: ros2 param set /teleop <nome> <val>) ---
         self.declare_parameter("left_stick_mode", "leg_manual")   # 'leg_manual' | 'gait'
         self.declare_parameter("selected_leg", "FL")        # gamba pilotata in leg_manual
-        self.declare_parameter("swing_range", 0.7)          # rad a fondo corsa stick
-        self.declare_parameter("lift_range", 0.7)
+        self.declare_parameter("swing_range", math.radians(80.0))  # manuale: fondo stick = max servo
+        self.declare_parameter("lift_range", math.radians(80.0))   #   (abbassa se troppo sensibile)
         self.declare_parameter("pan_range", math.radians(80.0))   # a fondo stick = range max testa
         self.declare_parameter("tilt_range", math.radians(90.0))
         self.declare_parameter("invert_tilt", False)
@@ -164,9 +169,17 @@ class Teleop(Node):
 
     def _leg_manual(self):
         sel = str(self._p("selected_leg")).upper()
-        # stick X -> swing, stick Y -> lift. Segni invertiti (versi verificati sul robot).
-        sw = clamp(-self.left.x * float(self._p("swing_range")), -SWING_LIMIT, SWING_LIMIT)
-        lf = clamp(-self.left.y * float(self._p("lift_range")), LIFT_LIMIT_LO, LIFT_LIMIT_HI)
+        # PUNTO DI PARTENZA = posa impostata dallo slider stance_up (come gait/body): a stick
+        # fermo la/le gamba/e stanno gia' all'altezza di appoggio scelta (nessuno scatto verso
+        # l'orizzontale). Il lift dipende solo dall'altezza: beta0 = asin(-stance_up / L).
+        stance_up = float(self._p("stance_up"))
+        lift0 = math.asin(clamp(-stance_up / LEG_LENGTH_MM, -1.0, 1.0))
+        # stick X -> swing, stick Y -> tweak del lift attorno a beta0. Segni verificati sul robot.
+        # Limiti ALLARGATI (MANUAL_*): il servo_node fa la guardia finale per-gamba.
+        sw = clamp(-self.left.x * float(self._p("swing_range")),
+                   -MANUAL_SWING_LIMIT, MANUAL_SWING_LIMIT)
+        lf = clamp(lift0 - self.left.y * float(self._p("lift_range")),
+                   MANUAL_LIFT_LO, MANUAL_LIFT_HI)
         # selected_leg accetta: 'ALL', una gamba ('FR'), o piu' gambe separate da virgola
         # ('FL,MR,RR') -> cosi' la plancia puo' spuntarne piu' di una insieme.
         if sel == "ALL":
