@@ -11,9 +11,10 @@ SICUREZZA (fondamentale con hardware reale):
   - SLEW-RATE LIMIT: i servi non "scattano" mai. Un loop a rate fisso muove l'uscita
     verso il target di al massimo `max_deg_per_sec` gradi/secondo -> movimento morbido.
     Riduce anche il picco di corrente (aiuta contro il BROWNOUT).
-  - AVVIO DAL NEUTRO: quando abiliti REAL, si parte dalla posa neutra calibrata e si
-    rampa verso il target. (I servi hobby non danno feedback di posizione, quindi il
-    primo assestamento al neutro e' inevitabile, ma il neutro e' una posa mite e sicura.)
+  - AVVIO DALLA POSA CORRENTE: quando abiliti REAL, si parte dal TARGET corrente (lo stance
+    pubblicato dal teleop) e si rampa da li'. Cosi' se il robot era gia' in piedi (SIM dopo
+    REAL) NON fa lo scatto verso il basso. (I servi hobby non danno feedback: se erano
+    fisicamente altrove ci sara' un piccolo assestamento, mitigato dallo slew-rate.)
 
 Va in coppia col teleop (bringup). NON far girare contemporaneamente il vecchio
 `leg_control` (anche quello muove i servi testa -> conflitto).
@@ -101,10 +102,13 @@ class ServoNode(Node):
     def _tick(self):
         enabled = bool(self._p("enabled"))
 
-        # transizione SIM -> REAL: parti dalla posa neutra (sicura), poi rampa al target
+        # transizione SIM -> REAL: parti dalla posa TARGET corrente (lo stance pubblicato dal
+        # teleop), non dal neutro orizzontale. Cosi' se il robot era gia' in piedi (es. SIM
+        # dopo REAL) riprende senza lo scatto verso il basso. Lo slew-rate resta attivo per
+        # ogni movimento successivo.
         if enabled and not self._was_enabled:
-            self.current = dict(self.neutral)
-            self.get_logger().warn("REAL attivato: parto dal neutro e rampo (slew-rate).")
+            self.current = dict(self.target)
+            self.get_logger().warn("REAL attivato: parto dalla posa corrente (target) e rampo (slew-rate).")
         self._was_enabled = enabled
 
         if not enabled:
