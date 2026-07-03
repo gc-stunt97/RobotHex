@@ -28,6 +28,15 @@ Da fare: (1) test **singolo** servo a 158° (`calibrate_servos.py` → `7 158`) 
 potenza; (2) verificare alimentazione servo (BEC/PSU, ampere); (3) fix hardware: 5-6V robusti,
 fili grossi, **condensatore 1000µF+ sul rail** vicino al PCA9685. Quota comoda intanto: −115/−120.
 
+> **Aggiornamento test alimentazione (luglio 2026):** confermato che è **corrente**, non codice.
+> Con **alimentatore 2.5 A / 12 V + DC-DC a 6 V** (≈5 A scarsi a 6 V) → brownout. Con
+> **alimentatore da banco 10 A / 6 V** → **tutto ok**, nessun contorcimento. Rimane un singolo
+> brownout **al power-up** (inrush simultaneo dei 12 servo), mitigato alzando la tensione piano
+> col da banco. → Con **batteria dedicata** che eroga i picchi il problema si risolve.
+> **Piano batterie robot:** **2S LiPo (7.4 V) 5000 mAh ≥30C** → **UBEC/buck switching 6.0 V
+> ≥15–20 A** per il rail servi (+ **cap 3300 µF** vicino al PCA9685) + **BEC 5 V/3 A separato**
+> per il Pi (rail servi e Pi separati, massa comune → il Pi non brownout-a quando i servi tirano).
+
 **Poi:** camminata reale a terra (quote di attacco spalle), **nodo teleop** joystick→gait,
 IMU per leveling, URDF+Gazebo.
 

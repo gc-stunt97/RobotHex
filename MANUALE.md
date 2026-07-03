@@ -242,6 +242,8 @@ Il **controller** (`ROS2-Remote-Controller`) ha `src/joypad_controller/` (joy_no
 ## 8. Roadmap / cose aperte
 - **Brownout** (hardware): oltre `stance_up` ≈ −120 i servi si contorcono → alimentazione robusta
   + condensatore sul rail. È il blocco per **alzare il robot / camminata a terra**. (handbook sez. 0)
+  *Test luglio 2026: 2.5 A/12 V+DC-DC → brownout; da banco 10 A/6 V → ok. È corrente, non codice.*
+  Piano batterie: **2S LiPo + UBEC 6 V ≥15–20 A** (servi, + cap 3300 µF) + **BEC 5 V** separato (Pi).
 - **Flash STM32** (via ST-Link): attiva i **tastini** joystick → cambio modalità senza schermo.
 - **Mesh STL** nell'URDF (robot fedele in RViz).
 - **Link dedicato** (robot hotspot / router da viaggio) per FPV robusto ovunque.
