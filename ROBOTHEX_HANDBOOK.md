@@ -11,7 +11,7 @@
 **Fatto:** backup git; IK 2 DOF verificata (`kinematics.py`); mappatura servo REALE
 FL/FR/ML/MR/RL/RR (`leg_config.py`); gait engine tripode/ripple/wave su tutte e 6 le gambe.
 - ✅ **Calibrazione completa 6 gambe**: `swing_center`/`lift_level` reali in `leg_config.py`
-  (FL 90/85, FR 80/95, ML 78/85, MR 92/82, RL 85/78, RR 93/93). Limiti per-servo omessi
+  (FL 90/90, FR 80/95, ML 78/85, MR 92/82, RL 85/78, RR 93/93). Limiti per-servo omessi
   di proposito (no fine-corsa meccanici; collisioni = compito del gait via fase). Col nuovo
   zero il tripode gira **uniforme**.
 - ✅ **Controllo testa dal joystick, via WiFi**: `leg_control_node.py` (`HeadController`)

@@ -35,7 +35,7 @@ from geometry_msgs.msg import Point
 from sensor_msgs.msg import JointState
 
 from robot_controllers.leg_config import (
-    LEGS, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, offset_fwd_for,
+    LEGS, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, offset_fwd_for, hip_position,
 )
 from robot_controllers.kinematics import inverse_kinematics
 from robot_controllers.gait import foot_trajectory, GAITS
@@ -46,6 +46,24 @@ SETTLE_TIME = 0.4 # s per POSARE le zampe a terra quando si rilascia lo stick (g
 
 def clamp(v, lo, hi):
     return max(lo, min(hi, v))
+
+
+def world_to_body(v, roll, pitch, yaw):
+    """Porta un punto FISSO NEL MONDO nel frame del CORPO ruotato di (roll,pitch,yaw).
+
+    Il corpo assume orientamento R = Rz(yaw)·Ry(pitch)·Rx(roll) rispetto al mondo; un punto
+    fisso nel mondo (i piedi a terra) si vede nel frame corpo come R^T·v. R^T = Rx(-roll)·
+    Ry(-pitch)·Rz(-yaw), quindi applichiamo in ordine Rz(-yaw), Ry(-pitch), Rx(-roll).
+    Rotazione attorno al centro corpo (origine del frame base). REP-103: X avanti, Y sx, Z su.
+    """
+    x, y, z = v
+    cy, sy = math.cos(-yaw), math.sin(-yaw)        # Rz(-yaw): imbardata
+    x, y = cy * x - sy * y, sy * x + cy * y
+    cp, sp = math.cos(-pitch), math.sin(-pitch)    # Ry(-pitch): beccheggio
+    x, z = cp * x + sp * z, -sp * x + cp * z
+    cr, sr = math.cos(-roll), math.sin(-roll)      # Rx(-roll): rollio
+    y, z = cr * y - sr * z, sr * y + cr * z
+    return (x, y, z)
 
 
 # Limiti giunti (rad), coerenti con l'URDF (description/gen_urdf.py)
@@ -78,6 +96,10 @@ class Teleop(Node):
         self.declare_parameter("swing_lift", 45.0)         # mm, sollevamento piede in aria
         self.declare_parameter("period", 2.0)              # s, durata ciclo
         self.declare_parameter("duty", 0.5)                # frazione del ciclo a terra
+        # parametri modalita' 'body' (posa del corpo a piedi fermi): escursione a fondo stick
+        self.declare_parameter("body_roll_range", 0.20)    # rad (~11°) rollio  (stick X)
+        self.declare_parameter("body_pitch_range", 0.20)   # rad (~11°) beccheggio (stick Y)
+        self.declare_parameter("body_yaw_range", 0.30)     # rad (~17°) imbardata (manopola Z)
 
         # ultimo valore letto dai due stick
         self.left = Point()
@@ -135,6 +157,8 @@ class Teleop(Node):
             self._leg_manual()
         elif mode == "gait":
             self._gait()
+        elif mode == "body":
+            self._body()
 
         self._publish()
 
@@ -206,6 +230,46 @@ class Teleop(Node):
                     fwd, up, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, off_fwd)
             except ValueError:
                 continue   # punto fuori portata: salta questa gamba per questo tick
+            self.joints[f"{name}_swing"] = clamp(math.radians(alpha), -SWING_LIMIT, SWING_LIMIT)
+            self.joints[f"{name}_lift"] = clamp(math.radians(beta), LIFT_LIMIT_LO, LIFT_LIMIT_HI)
+
+    def _body(self):
+        """Posa del corpo a PIEDI FERMI: inclina/ruota il corpo mentre le 6 punte restano
+        a terra. stick SX -> X=roll, Y=pitch, manopola Z=yaw. La testa resta sullo stick DX.
+
+        Modello: i piedi sono fissi nel mondo (= frame corpo a riposo). Ruotando il corpo di
+        (roll,pitch,yaw), ogni piede si "vede" nel frame corpo in una nuova posizione; da li'
+        ricaviamo (fwd, up) rispetto alla spalla e risolviamo l'IK 2 DOF. Con 2 DOF controlliamo
+        solo fwd+up: la sporgenza laterale (out) consegue -> su angoli ampi il piede scivola un
+        filo di lato. Nei limiti del possibile, come richiesto.
+        """
+        roll = clamp(self.left.x, -1.0, 1.0) * float(self._p("body_roll_range"))
+        pitch = clamp(self.left.y, -1.0, 1.0) * float(self._p("body_pitch_range"))
+        yaw = clamp(self.left.z, -1.0, 1.0) * float(self._p("body_yaw_range"))
+        stance_up = float(self._p("stance_up"))
+
+        for name, cfg in LEGS.items():
+            s = 1.0 if cfg.side == "L" else -1.0
+            hx, hy, _ = hip_position(name)
+            off_fwd = offset_fwd_for(name)
+            # 1) posa NEUTRA del piede nel frame corpo a riposo (= mondo): stessa posa a cui
+            #    tornano gait/manuale (fwd=off_fwd, up=stance_up). L'IK ci da' anche 'out'.
+            try:
+                _, _, out0 = inverse_kinematics(
+                    off_fwd, stance_up, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, off_fwd)
+            except ValueError:
+                continue
+            foot_world = (hx + off_fwd, hy + s * out0, stance_up)
+            # 2) dove si vede quel piede nel frame corpo RUOTATO
+            px, py, pz = world_to_body(foot_world, roll, pitch, yaw)
+            # 3) rispetto alla spalla -> (fwd, up) per l'IK (out consegue)
+            fwd = px - hx
+            up = pz
+            try:
+                alpha, beta, _ = inverse_kinematics(
+                    fwd, up, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, off_fwd)
+            except ValueError:
+                continue   # posa fuori portata per questa gamba: la tiene ferma
             self.joints[f"{name}_swing"] = clamp(math.radians(alpha), -SWING_LIMIT, SWING_LIMIT)
             self.joints[f"{name}_lift"] = clamp(math.radians(beta), LIFT_LIMIT_LO, LIFT_LIMIT_HI)
 

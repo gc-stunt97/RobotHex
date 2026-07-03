@@ -92,10 +92,15 @@ ROS serve solo a *telecomandare* il sender (`camera_manager`). Vedi `camera/READ
 4. **Guida:**
    - **Joystick DESTRO** → testa pan/tilt (sempre attivo).
    - **Joystick SINISTRO** → dipende dalla **Modalità** (bottone plancia):
-     - **Manuale**: muove la **Gamba** selezionata (X=swing avanti/indietro, Y=lift su/giù).
-       Gamba = `ALL` → muove tutte insieme.
+     - **Manuale**: muove la/le **Gambe** selezionate (X=swing avanti/indietro, Y=lift su/giù).
+       Sulla plancia si spuntano **più gambe insieme** (o `ALL`).
      - **Gait**: **Y = avanti/indietro**, **X = sterza** (a fondo gira sul posto). Scegli il
        **Pattern** (tripod/ripple/wave) e regola gli **slider** (stride/period/duty/stance_up).
+       Allo stick a zero il robot **posa le zampe a terra** (posa livellata), non resta a metà ciclo.
+     - **Corpo**: posa del corpo a **piedi fermi** (i 6 piedi restano a terra). **X=roll**,
+       **Y=pitch**, **manopola Z=yaw** → inclini/ruoti il corpo sul posto. Escursione regolabile
+       coi parametri `body_roll_range`/`body_pitch_range`/`body_yaw_range`. Coi 2 DOF il piede
+       può scivolare un filo di lato su angoli ampi (limite fisico, non un bug).
    - **Toggle SIM ⟷ REAL**: **SIM** = solo RViz (servi fermi). **REAL** (con conferma) = muove i
      **servi veri** con lo stesso comando. Grazie allo slew-rate non scattano.
 
@@ -149,8 +154,9 @@ ros2 bag record /joint_states   # registra;  ros2 bag play <cartella>   # rieseg
 
 ## 5. Parametri dei nodi
 
-**`teleop`** — `left_stick_mode` (`leg_manual`|`gait`), `selected_leg` (FL/FR/ML/MR/RL/RR/`ALL`),
-`gait_pattern` (tripod/ripple/wave), `stride`, `period`, `duty`, `stance_up`, `swing_lift`,
+**`teleop`** — `left_stick_mode` (`leg_manual`|`gait`|`body`), `selected_leg` (una gamba,
+lista CSV es. `FL,MR`, o `ALL`), `gait_pattern` (tripod/ripple/wave), `stride`, `period`,
+`duty`, `stance_up`, `swing_lift`, `body_roll_range`, `body_pitch_range`, `body_yaw_range`,
 `swing_range`, `lift_range`, `pan_range`, `tilt_range`, `invert_tilt`, `rate_hz`.
 
 **`servo_node`** — `enabled` (SIM/REAL), `pan_center`, `tilt_center`, `max_deg_per_sec`

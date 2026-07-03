@@ -41,8 +41,8 @@ def m(mm):
 SPINE_LEN = 400.0          # lunghezza delle due spine di alluminio
 SPINE_SQ = 10.0            # sezione quadra 10x10
 STANDOFF = 40.0            # distacco verticale tra spina inferiore e superiore
-ROW_SPACING = 165.0        # passo tra le traverse (front<->mid<->rear)
-HALF_SWING = 37.5          # meta' della distanza (75 mm) tra i due assi di swing
+ROW_SPACING = lc.ROW_SPACING_MM   # passo traverse (front<->mid<->rear) — fonte unica: leg_config
+HALF_SWING = lc.HALF_SWING_MM     # meta' distanza (75 mm) tra i due assi di swing — leg_config
 LIFT_ABOVE_LOWER_BOTTOM = 28.0   # asse di lift sopra il piano inferiore della spina inferiore
 
 # Quote fisiche derivate
