@@ -195,15 +195,12 @@ def joint(name, jtype, parent, child, origin_mm, axis=(0, 0, 0),
 # non e' uno scalino violento. lift>0 = piede in basso -> corpo sollevato. swing/testa a 0.
 STANCE_LIFT_INIT = 0.6    # rad
 
-# Guadagni del PID di POSIZIONE FISICO (interfaccia `position_pid` di gazebo_ros2_control):
-# il comando di posizione diventa una COPPIA calcolata via PID, NON un teletrasporto
-# cinematico (che faceva divergere il solutore e sparava via il robot). La coppia resta
-# limitata dal <limit effort=...> del giunto (~1.5 Nm, realistico per un servo hobby),
-# quindi il sistema non puo' iniettare energia dal nulla. Da tarare dal vivo se serve.
-POS_KP = 100.0
-POS_KI = 1.0
-POS_KD = 5.0
-POS_MAX_IE = 1.0          # tetto sull'errore integrale (anti-windup)
+# Controllo FISICO: interfaccia di comando `effort` (coppia). Un JointTrajectoryController
+# (vedi controllers.yaml) chiude l'anello di posizione via PID -> coppia. Cosi' i giunti
+# applicano FORZE reali invece del teletrasporto cinematico dell'interfaccia `position`
+# (che su base flottante in contatto faceva divergere il solutore e sparava via il robot).
+# La coppia e' limitata dal cap dell'interfaccia = JOINT_EFFORT (~1.5 Nm, realistico servo):
+# non puo' iniettare energia dal nulla. I guadagni PID stanno nel controllers.yaml.
 
 
 def actuated_joints():
@@ -375,11 +372,10 @@ def gazebo_extensions():
     out.append('    </hardware>\n')
     for jn, lo, hi, init in actuated_joints():
         out.append(f"""    <joint name="{jn}">
-      <param name="pos_kp">{POS_KP}</param>
-      <param name="pos_ki">{POS_KI}</param>
-      <param name="pos_kd">{POS_KD}</param>
-      <param name="pos_max_integral_error">{POS_MAX_IE}</param>
-      <command_interface name="position_pid"/>
+      <command_interface name="effort">
+        <param name="min">-{JOINT_EFFORT}</param>
+        <param name="max">{JOINT_EFFORT}</param>
+      </command_interface>
       <state_interface name="position">
         <param name="initial_value">{init}</param>
       </state_interface>
