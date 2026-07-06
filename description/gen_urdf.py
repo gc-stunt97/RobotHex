@@ -191,13 +191,20 @@ def joint(name, jtype, parent, child, origin_mm, axis=(0, 0, 0),
 # Elenco ORDINATO dei giunti attuati (per il blocco ros2_control e per il yaml
 # dei controller). Ordine: per gamba swing+lift (FL,FR,ML,MR,RL,RR), poi testa.
 # --------------------------------------------------------------------------
+# Posa d'appoggio allo SPAWN: il robot nasce gia' in piedi cosi' il primo comando
+# non e' uno scalino violento (che su un'interfaccia di posizione cinematica lo spara
+# in aria). lift>0 = piede in basso -> corpo sollevato. swing/testa a 0.
+STANCE_LIFT_INIT = 0.6    # rad
+
+
 def actuated_joints():
+    """(nome, lower, upper, valore_iniziale) per ogni giunto attuato."""
     js = []
     for name in lc.LEGS:
-        js.append((f"{name}_swing", -SWING_ABS, SWING_ABS))
-        js.append((f"{name}_lift", LIFT_LO, LIFT_HI))
-    js.append(("head_pan_joint", -PAN_ABS, PAN_ABS))
-    js.append(("head_tilt_joint", -TILT_ABS, TILT_ABS))
+        js.append((f"{name}_swing", -SWING_ABS, SWING_ABS, 0.0))
+        js.append((f"{name}_lift", LIFT_LO, LIFT_HI, STANCE_LIFT_INIT))
+    js.append(("head_pan_joint", -PAN_ABS, PAN_ABS, 0.0))
+    js.append(("head_tilt_joint", -TILT_ABS, TILT_ABS, 0.0))
     return js
 
 
@@ -342,12 +349,12 @@ def gazebo_extensions():
     # 1) attrito: piedi grippanti (mu alto), corpo/gambe piu' scivolosi
     for name in lc.LEGS:
         out.append(f"""  <gazebo reference="{name}_foot">
-    <mu1>1.2</mu1>
-    <mu2>1.2</mu2>
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <kp>100000.0</kp>
+    <kd>10.0</kd>
     <minDepth>0.001</minDepth>
-    <maxVel>0.0</maxVel>
+    <maxVel>0.1</maxVel>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
 """)
@@ -357,13 +364,15 @@ def gazebo_extensions():
     out.append('    <hardware>\n')
     out.append('      <plugin>gazebo_ros2_control/GazeboSystem</plugin>\n')
     out.append('    </hardware>\n')
-    for jn, lo, hi in actuated_joints():
+    for jn, lo, hi, init in actuated_joints():
         out.append(f"""    <joint name="{jn}">
       <command_interface name="position">
         <param name="min">{lo}</param>
         <param name="max">{hi}</param>
       </command_interface>
-      <state_interface name="position"/>
+      <state_interface name="position">
+        <param name="initial_value">{init}</param>
+      </state_interface>
       <state_interface name="velocity"/>
       <state_interface name="effort"/>
     </joint>

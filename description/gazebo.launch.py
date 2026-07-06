@@ -82,7 +82,7 @@ def generate_launch_description():
         package="gazebo_ros",
         executable="spawn_entity.py",
         output="screen",
-        arguments=["-topic", "robot_description", "-entity", "genghis", "-z", "0.15"],
+        arguments=["-topic", "robot_description", "-entity", "genghis", "-z", "0.09"],
     )
 
     # 4) controller: attivati DOPO lo spawn (altrimenti il controller_manager
