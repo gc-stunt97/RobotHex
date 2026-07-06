@@ -28,6 +28,7 @@ Poi, per farlo TENERE la posa d'appoggio (stance), in un altro terminale:
 """
 
 import os
+import re
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription,
                              RegisterEventHandler, ExecuteProcess)
@@ -46,7 +47,16 @@ def generate_launch_description():
 
     # URDF -> stringa, col token del controllers.yaml risolto al percorso reale.
     with open(urdf_path, "r", encoding="utf-8") as f:
-        robot_description = f.read().replace("__CONTROLLERS_YAML__", yaml_path)
+        raw = f.read().replace("__CONTROLLERS_YAML__", yaml_path)
+
+    # WORKAROUND (gazebo_ros2_control su Humble, issue ros-controls/gazebo_ros2_control#295):
+    # il plugin inoltra robot_description al controller_manager come OVERRIDE DI PARAMETRO
+    # (metodo deprecato). Il parser dei parametri si rompe sulla DICHIARAZIONE XML e sui
+    # COMMENTI (spazi/newline) -> il controller_manager non parte. Li togliamo dal description
+    # PUBBLICATO (l'URDF su disco resta invariato). Vedi doc control.ros.org.
+    raw = re.sub(r"<\?xml[^>]*\?>", "", raw)          # via la <?xml version="1.0"?>
+    raw = re.sub(r"<!--.*?-->", "", raw, flags=re.DOTALL)  # via tutti i commenti
+    robot_description = raw.strip()
 
     gui = LaunchConfiguration("gui")
     drive = LaunchConfiguration("drive")
