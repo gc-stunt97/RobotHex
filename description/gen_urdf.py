@@ -370,12 +370,12 @@ def gazebo_extensions():
     # 1) attrito: piedi grippanti (mu alto), corpo/gambe piu' scivolosi
     for name in lc.LEGS:
         out.append(f"""  <gazebo reference="{name}_foot">
-    <mu1>2.0</mu1>
-    <mu2>2.0</mu2>
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
     <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
-    <maxVel>0.0</maxVel>
+    <maxVel>0.1</maxVel>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
 """)

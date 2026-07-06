@@ -547,57 +547,57 @@
 
   <!-- ===== ESTENSIONI GAZEBO ===== -->
   <gazebo reference="FL_foot">
-    <mu1>2.0</mu1>
-    <mu2>2.0</mu2>
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
     <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
-    <maxVel>0.0</maxVel>
+    <maxVel>0.1</maxVel>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="FR_foot">
-    <mu1>2.0</mu1>
-    <mu2>2.0</mu2>
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
     <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
-    <maxVel>0.0</maxVel>
+    <maxVel>0.1</maxVel>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="ML_foot">
-    <mu1>2.0</mu1>
-    <mu2>2.0</mu2>
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
     <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
-    <maxVel>0.0</maxVel>
+    <maxVel>0.1</maxVel>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="MR_foot">
-    <mu1>2.0</mu1>
-    <mu2>2.0</mu2>
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
     <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
-    <maxVel>0.0</maxVel>
+    <maxVel>0.1</maxVel>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="RL_foot">
-    <mu1>2.0</mu1>
-    <mu2>2.0</mu2>
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
     <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
-    <maxVel>0.0</maxVel>
+    <maxVel>0.1</maxVel>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <gazebo reference="RR_foot">
-    <mu1>2.0</mu1>
-    <mu2>2.0</mu2>
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
     <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
-    <maxVel>0.0</maxVel>
+    <maxVel>0.1</maxVel>
     <material>Gazebo/FlatBlack</material>
   </gazebo>
   <ros2_control name="GazeboSystem" type="system">
