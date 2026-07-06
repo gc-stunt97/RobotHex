@@ -60,6 +60,13 @@ JOINT_VELOCITY = 6.0      # rad/s
 # (`friction`): in ODE e' instabile e mandava la velocita' a NaN.
 JOINT_DAMPING = 0.3
 
+# Massa del CORPO (telaio + elettronica + i 6 servi di swing, montati sul corpo). Il resto
+# del peso e' nelle gambe (spalle/lift). Totale robot ~1.1-1.2 kg (12 servi ~0.6-0.7 kg +
+# telaio + Pi). Il Raspberry sta sulla fila POSTERIORE -> baricentro spostato indietro:
+# lo modelliamo mettendo il COM del corpo dietro il centro geometrico (X negativo = indietro).
+BODY_MASS = 0.75          # kg
+BODY_COM_X_MM = -45.0     # baricentro corpo ~45 mm dietro il centro (Pi/cablaggio posteriori)
+
 # Token sostituito dal launch col percorso ASSOLUTO del controllers.yaml sul laptop.
 CONTROLLERS_YAML_TOKEN = "__CONTROLLERS_YAML__"
 
@@ -268,12 +275,13 @@ def build(gazebo=False):
     body_cx = m(SPINE_CX)
     body_cz = m(bz((LOWER_C + UPPER_C) / 2))
     body_sx, body_sy, body_sz = m(SPINE_LEN), m(2 * HALF_SWING + SPINE_SQ), m(UPPER_C - LOWER_C + SPINE_SQ)
-    b_ixx, b_iyy, b_izz = inertia_box_vals(0.6, body_sx, body_sy, body_sz)
+    b_ixx, b_iyy, b_izz = inertia_box_vals(BODY_MASS, body_sx, body_sy, body_sz)
+    body_com_x = m(BODY_COM_X_MM)   # baricentro spostato indietro (Pi posteriore)
     out.append(f"""    <collision>
       <origin xyz="{body_cx} 0 {body_cz}" rpy="0 0 0"/>
       <geometry><box size="{body_sx} {body_sy} {body_sz}"/></geometry>
     </collision>
-{inertial(0.6, b_ixx, b_iyy, b_izz, origin=(body_cx, 0.0, body_cz))}
+{inertial(BODY_MASS, b_ixx, b_iyy, b_izz, origin=(body_com_x, 0.0, body_cz))}
   </link>
 """)
 

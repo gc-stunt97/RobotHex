@@ -54,9 +54,9 @@
       <geometry><box size="0.4 0.085 0.06"/></geometry>
     </collision>
     <inertial>
-      <origin xyz="0.035 0.0 0.002" rpy="0 0 0"/>
-      <mass value="0.6"/>
-      <inertia ixx="5.412500e-04" ixy="0" ixz="0" iyy="8.180000e-03" iyz="0" izz="8.361250e-03"/>
+      <origin xyz="-0.045 0.0 0.002" rpy="0 0 0"/>
+      <mass value="0.75"/>
+      <inertia ixx="6.765625e-04" ixy="0" ixz="0" iyy="1.022500e-02" iyz="0" izz="1.045156e-02"/>
     </inertial>
   </link>
 
