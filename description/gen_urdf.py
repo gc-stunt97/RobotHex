@@ -55,10 +55,10 @@ TILT_ABS = 0.8            # testa tilt: +/- ~46 gradi
 # Stallo di un servo hobby tipo MG996R ~ 0.9-1.5 N*m @6V; velocita' ~0.17 s/60deg ~ 6 rad/s.
 JOINT_EFFORT = 1.5        # N*m
 JOINT_VELOCITY = 6.0      # rad/s
-# Smorzamento/attrito FISICO del giunto (Nm*s/rad, Nm). Col controllo in coppia il
-# solutore ne tiene conto: dissipa le micro-oscillazioni del PID alla radice (meno jitter).
+# Smorzamento viscoso FISICO del giunto (Nm*s/rad). Col controllo in coppia il solutore ne
+# tiene conto: dissipa le micro-oscillazioni del PID. NB: niente attrito di Coulomb
+# (`friction`): in ODE e' instabile e mandava la velocita' a NaN.
 JOINT_DAMPING = 0.3
-JOINT_FRICTION = 0.05
 
 # Token sostituito dal launch col percorso ASSOLUTO del controllers.yaml sul laptop.
 CONTROLLERS_YAML_TOKEN = "__CONTROLLERS_YAML__"
@@ -105,7 +105,9 @@ def bz(phys_z):
 # sono ESSENZIALI: un tensore sbagliato (o i vecchi placeholder 1e-4 uguali per
 # tutti) fa vibrare/esplodere il modello. Formule del corpo rigido omogeneo.
 # --------------------------------------------------------------------------
-INERTIA_FLOOR = 1e-6      # Gazebo diventa instabile con inerzie troppo piccole
+INERTIA_FLOOR = 1e-4      # ODE va a NaN con inerzie troppo piccole (link sottili): alziamo
+                          # il pavimento. Rende i pezzi minuti un filo piu' "pesanti da ruotare"
+                          # ma stabilizza il solutore (mass-matrix meglio condizionata).
 
 
 def _floor3(ixx, iyy, izz):
@@ -187,7 +189,7 @@ def joint(name, jtype, parent, child, origin_mm, axis=(0, 0, 0),
     if jtype == "revolute":
         s += (f'    <limit lower="{lower}" upper="{upper}" '
               f'effort="{JOINT_EFFORT}" velocity="{JOINT_VELOCITY}"/>\n')
-        s += f'    <dynamics damping="{JOINT_DAMPING}" friction="{JOINT_FRICTION}"/>\n'
+        s += f'    <dynamics damping="{JOINT_DAMPING}"/>\n'
     s += "  </joint>\n"
     return s
 
@@ -362,7 +364,7 @@ def gazebo_extensions():
         out.append(f"""  <gazebo reference="{name}_foot">
     <mu1>1.0</mu1>
     <mu2>1.0</mu2>
-    <kp>100000.0</kp>
+    <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
     <maxVel>0.1</maxVel>

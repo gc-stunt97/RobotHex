@@ -67,7 +67,7 @@
     <origin xyz="0.165 0.0375 0.0" rpy="0 0 0"/>
     <axis xyz="0 0 -1.0"/>
     <limit lower="-0.9" upper="0.9" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="FL_shoulder">
     <visual>
@@ -82,7 +82,7 @@
     <inertial>
       <origin xyz="0.02 0.01 0.0" rpy="0 0 0"/>
       <mass value="0.05"/>
-      <inertia ixx="5.416667e-06" ixy="0" ixz="0" iyy="1.208333e-05" iyz="0" izz="1.416667e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="FL_lift" type="revolute">
@@ -91,7 +91,7 @@
     <origin xyz="0.04 0.02 0.0" rpy="0 0 0"/>
     <axis xyz="-1.0 0 0"/>
     <limit lower="-0.4" upper="1.4" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="FL_leg">
     <visual>
@@ -106,7 +106,7 @@
     <inertial>
       <origin xyz="0.0 0.07 0.0" rpy="0 0 0"/>
       <mass value="0.03"/>
-      <inertia ixx="4.909000e-05" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="4.909000e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="FL_foot_joint" type="fixed">
@@ -125,7 +125,7 @@
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <mass value="0.01"/>
-      <inertia ixx="1.000000e-06" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="1.000000e-06"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
 
@@ -136,7 +136,7 @@
     <origin xyz="0.165 -0.0375 0.0" rpy="0 0 0"/>
     <axis xyz="0 0 1.0"/>
     <limit lower="-0.9" upper="0.9" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="FR_shoulder">
     <visual>
@@ -151,7 +151,7 @@
     <inertial>
       <origin xyz="0.02 -0.01 0.0" rpy="0 0 0"/>
       <mass value="0.05"/>
-      <inertia ixx="5.416667e-06" ixy="0" ixz="0" iyy="1.208333e-05" iyz="0" izz="1.416667e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="FR_lift" type="revolute">
@@ -160,7 +160,7 @@
     <origin xyz="0.04 -0.02 0.0" rpy="0 0 0"/>
     <axis xyz="1.0 0 0"/>
     <limit lower="-0.4" upper="1.4" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="FR_leg">
     <visual>
@@ -175,7 +175,7 @@
     <inertial>
       <origin xyz="0.0 -0.07 0.0" rpy="0 0 0"/>
       <mass value="0.03"/>
-      <inertia ixx="4.909000e-05" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="4.909000e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="FR_foot_joint" type="fixed">
@@ -194,7 +194,7 @@
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <mass value="0.01"/>
-      <inertia ixx="1.000000e-06" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="1.000000e-06"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
 
@@ -205,7 +205,7 @@
     <origin xyz="0.0 0.0375 0.0" rpy="0 0 0"/>
     <axis xyz="0 0 -1.0"/>
     <limit lower="-0.9" upper="0.9" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="ML_shoulder">
     <visual>
@@ -220,7 +220,7 @@
     <inertial>
       <origin xyz="0.02 0.01 0.0" rpy="0 0 0"/>
       <mass value="0.05"/>
-      <inertia ixx="5.416667e-06" ixy="0" ixz="0" iyy="1.208333e-05" iyz="0" izz="1.416667e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="ML_lift" type="revolute">
@@ -229,7 +229,7 @@
     <origin xyz="0.04 0.02 0.0" rpy="0 0 0"/>
     <axis xyz="-1.0 0 0"/>
     <limit lower="-0.4" upper="1.4" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="ML_leg">
     <visual>
@@ -244,7 +244,7 @@
     <inertial>
       <origin xyz="0.0 0.07 0.0" rpy="0 0 0"/>
       <mass value="0.03"/>
-      <inertia ixx="4.909000e-05" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="4.909000e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="ML_foot_joint" type="fixed">
@@ -263,7 +263,7 @@
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <mass value="0.01"/>
-      <inertia ixx="1.000000e-06" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="1.000000e-06"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
 
@@ -274,7 +274,7 @@
     <origin xyz="0.0 -0.0375 0.0" rpy="0 0 0"/>
     <axis xyz="0 0 1.0"/>
     <limit lower="-0.9" upper="0.9" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="MR_shoulder">
     <visual>
@@ -289,7 +289,7 @@
     <inertial>
       <origin xyz="0.02 -0.01 0.0" rpy="0 0 0"/>
       <mass value="0.05"/>
-      <inertia ixx="5.416667e-06" ixy="0" ixz="0" iyy="1.208333e-05" iyz="0" izz="1.416667e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="MR_lift" type="revolute">
@@ -298,7 +298,7 @@
     <origin xyz="0.04 -0.02 0.0" rpy="0 0 0"/>
     <axis xyz="1.0 0 0"/>
     <limit lower="-0.4" upper="1.4" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="MR_leg">
     <visual>
@@ -313,7 +313,7 @@
     <inertial>
       <origin xyz="0.0 -0.07 0.0" rpy="0 0 0"/>
       <mass value="0.03"/>
-      <inertia ixx="4.909000e-05" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="4.909000e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="MR_foot_joint" type="fixed">
@@ -332,7 +332,7 @@
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <mass value="0.01"/>
-      <inertia ixx="1.000000e-06" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="1.000000e-06"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
 
@@ -343,7 +343,7 @@
     <origin xyz="-0.165 0.0375 0.0" rpy="0 0 0"/>
     <axis xyz="0 0 -1.0"/>
     <limit lower="-0.9" upper="0.9" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="RL_shoulder">
     <visual>
@@ -358,7 +358,7 @@
     <inertial>
       <origin xyz="-0.02 0.01 0.0" rpy="0 0 0"/>
       <mass value="0.05"/>
-      <inertia ixx="5.416667e-06" ixy="0" ixz="0" iyy="1.208333e-05" iyz="0" izz="1.416667e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="RL_lift" type="revolute">
@@ -367,7 +367,7 @@
     <origin xyz="-0.04 0.02 0.0" rpy="0 0 0"/>
     <axis xyz="-1.0 0 0"/>
     <limit lower="-0.4" upper="1.4" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="RL_leg">
     <visual>
@@ -382,7 +382,7 @@
     <inertial>
       <origin xyz="0.0 0.07 0.0" rpy="0 0 0"/>
       <mass value="0.03"/>
-      <inertia ixx="4.909000e-05" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="4.909000e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="RL_foot_joint" type="fixed">
@@ -401,7 +401,7 @@
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <mass value="0.01"/>
-      <inertia ixx="1.000000e-06" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="1.000000e-06"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
 
@@ -412,7 +412,7 @@
     <origin xyz="-0.165 -0.0375 0.0" rpy="0 0 0"/>
     <axis xyz="0 0 1.0"/>
     <limit lower="-0.9" upper="0.9" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="RR_shoulder">
     <visual>
@@ -427,7 +427,7 @@
     <inertial>
       <origin xyz="-0.02 -0.01 0.0" rpy="0 0 0"/>
       <mass value="0.05"/>
-      <inertia ixx="5.416667e-06" ixy="0" ixz="0" iyy="1.208333e-05" iyz="0" izz="1.416667e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="RR_lift" type="revolute">
@@ -436,7 +436,7 @@
     <origin xyz="-0.04 -0.02 0.0" rpy="0 0 0"/>
     <axis xyz="1.0 0 0"/>
     <limit lower="-0.4" upper="1.4" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="RR_leg">
     <visual>
@@ -451,7 +451,7 @@
     <inertial>
       <origin xyz="0.0 -0.07 0.0" rpy="0 0 0"/>
       <mass value="0.03"/>
-      <inertia ixx="4.909000e-05" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="4.909000e-05"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="RR_foot_joint" type="fixed">
@@ -470,7 +470,7 @@
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <mass value="0.01"/>
-      <inertia ixx="1.000000e-06" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="1.000000e-06"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
 
@@ -481,7 +481,7 @@
     <origin xyz="0.165 0.0 0.032" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
     <limit lower="-1.57" upper="1.57" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="head_pan">
     <visual>
@@ -496,7 +496,7 @@
     <inertial>
       <origin xyz="0.01 0.0 0.025" rpy="0 0 0"/>
       <mass value="0.03"/>
-      <inertia ixx="7.250000e-06" ixy="0" ixz="0" iyy="7.250000e-06" iyz="0" izz="2.000000e-06"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="head_tilt_joint" type="revolute">
@@ -505,7 +505,7 @@
     <origin xyz="0.02 0.0 0.05" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="-0.8" upper="0.8" effort="1.5" velocity="6.0"/>
-    <dynamics damping="0.3" friction="0.05"/>
+    <dynamics damping="0.3"/>
   </joint>
   <link name="head_tilt">
     <visual>
@@ -520,7 +520,7 @@
     <inertial>
       <origin xyz="0.0125 0.0 0.0" rpy="0 0 0"/>
       <mass value="0.02"/>
-      <inertia ixx="2.166667e-06" ixy="0" ixz="0" iyy="1.708333e-06" iyz="0" izz="2.541667e-06"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
   <joint name="camera_joint" type="fixed">
@@ -541,7 +541,7 @@
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <mass value="0.005"/>
-      <inertia ixx="1.000000e-06" ixy="0" ixz="0" iyy="1.000000e-06" iyz="0" izz="1.000000e-06"/>
+      <inertia ixx="1.000000e-04" ixy="0" ixz="0" iyy="1.000000e-04" iyz="0" izz="1.000000e-04"/>
     </inertial>
   </link>
 
@@ -549,7 +549,7 @@
   <gazebo reference="FL_foot">
     <mu1>1.0</mu1>
     <mu2>1.0</mu2>
-    <kp>100000.0</kp>
+    <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
     <maxVel>0.1</maxVel>
@@ -558,7 +558,7 @@
   <gazebo reference="FR_foot">
     <mu1>1.0</mu1>
     <mu2>1.0</mu2>
-    <kp>100000.0</kp>
+    <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
     <maxVel>0.1</maxVel>
@@ -567,7 +567,7 @@
   <gazebo reference="ML_foot">
     <mu1>1.0</mu1>
     <mu2>1.0</mu2>
-    <kp>100000.0</kp>
+    <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
     <maxVel>0.1</maxVel>
@@ -576,7 +576,7 @@
   <gazebo reference="MR_foot">
     <mu1>1.0</mu1>
     <mu2>1.0</mu2>
-    <kp>100000.0</kp>
+    <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
     <maxVel>0.1</maxVel>
@@ -585,7 +585,7 @@
   <gazebo reference="RL_foot">
     <mu1>1.0</mu1>
     <mu2>1.0</mu2>
-    <kp>100000.0</kp>
+    <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
     <maxVel>0.1</maxVel>
@@ -594,7 +594,7 @@
   <gazebo reference="RR_foot">
     <mu1>1.0</mu1>
     <mu2>1.0</mu2>
-    <kp>100000.0</kp>
+    <kp>50000.0</kp>
     <kd>10.0</kd>
     <minDepth>0.001</minDepth>
     <maxVel>0.1</maxVel>
