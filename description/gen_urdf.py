@@ -192,9 +192,18 @@ def joint(name, jtype, parent, child, origin_mm, axis=(0, 0, 0),
 # dei controller). Ordine: per gamba swing+lift (FL,FR,ML,MR,RL,RR), poi testa.
 # --------------------------------------------------------------------------
 # Posa d'appoggio allo SPAWN: il robot nasce gia' in piedi cosi' il primo comando
-# non e' uno scalino violento (che su un'interfaccia di posizione cinematica lo spara
-# in aria). lift>0 = piede in basso -> corpo sollevato. swing/testa a 0.
+# non e' uno scalino violento. lift>0 = piede in basso -> corpo sollevato. swing/testa a 0.
 STANCE_LIFT_INIT = 0.6    # rad
+
+# Guadagni del PID di POSIZIONE FISICO (interfaccia `position_pid` di gazebo_ros2_control):
+# il comando di posizione diventa una COPPIA calcolata via PID, NON un teletrasporto
+# cinematico (che faceva divergere il solutore e sparava via il robot). La coppia resta
+# limitata dal <limit effort=...> del giunto (~1.5 Nm, realistico per un servo hobby),
+# quindi il sistema non puo' iniettare energia dal nulla. Da tarare dal vivo se serve.
+POS_KP = 100.0
+POS_KI = 1.0
+POS_KD = 5.0
+POS_MAX_IE = 1.0          # tetto sull'errore integrale (anti-windup)
 
 
 def actuated_joints():
@@ -366,10 +375,11 @@ def gazebo_extensions():
     out.append('    </hardware>\n')
     for jn, lo, hi, init in actuated_joints():
         out.append(f"""    <joint name="{jn}">
-      <command_interface name="position">
-        <param name="min">{lo}</param>
-        <param name="max">{hi}</param>
-      </command_interface>
+      <param name="pos_kp">{POS_KP}</param>
+      <param name="pos_ki">{POS_KI}</param>
+      <param name="pos_kd">{POS_KD}</param>
+      <param name="pos_max_integral_error">{POS_MAX_IE}</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">{init}</param>
       </state_interface>

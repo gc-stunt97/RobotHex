@@ -591,10 +591,11 @@
       <plugin>gazebo_ros2_control/GazeboSystem</plugin>
     </hardware>
     <joint name="FL_swing">
-      <command_interface name="position">
-        <param name="min">-0.9</param>
-        <param name="max">0.9</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
       </state_interface>
@@ -602,10 +603,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="FL_lift">
-      <command_interface name="position">
-        <param name="min">-0.4</param>
-        <param name="max">1.4</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.6</param>
       </state_interface>
@@ -613,10 +615,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="FR_swing">
-      <command_interface name="position">
-        <param name="min">-0.9</param>
-        <param name="max">0.9</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
       </state_interface>
@@ -624,10 +627,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="FR_lift">
-      <command_interface name="position">
-        <param name="min">-0.4</param>
-        <param name="max">1.4</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.6</param>
       </state_interface>
@@ -635,10 +639,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="ML_swing">
-      <command_interface name="position">
-        <param name="min">-0.9</param>
-        <param name="max">0.9</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
       </state_interface>
@@ -646,10 +651,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="ML_lift">
-      <command_interface name="position">
-        <param name="min">-0.4</param>
-        <param name="max">1.4</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.6</param>
       </state_interface>
@@ -657,10 +663,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="MR_swing">
-      <command_interface name="position">
-        <param name="min">-0.9</param>
-        <param name="max">0.9</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
       </state_interface>
@@ -668,10 +675,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="MR_lift">
-      <command_interface name="position">
-        <param name="min">-0.4</param>
-        <param name="max">1.4</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.6</param>
       </state_interface>
@@ -679,10 +687,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="RL_swing">
-      <command_interface name="position">
-        <param name="min">-0.9</param>
-        <param name="max">0.9</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
       </state_interface>
@@ -690,10 +699,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="RL_lift">
-      <command_interface name="position">
-        <param name="min">-0.4</param>
-        <param name="max">1.4</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.6</param>
       </state_interface>
@@ -701,10 +711,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="RR_swing">
-      <command_interface name="position">
-        <param name="min">-0.9</param>
-        <param name="max">0.9</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
       </state_interface>
@@ -712,10 +723,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="RR_lift">
-      <command_interface name="position">
-        <param name="min">-0.4</param>
-        <param name="max">1.4</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.6</param>
       </state_interface>
@@ -723,10 +735,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="head_pan_joint">
-      <command_interface name="position">
-        <param name="min">-1.57</param>
-        <param name="max">1.57</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
       </state_interface>
@@ -734,10 +747,11 @@
       <state_interface name="effort"/>
     </joint>
     <joint name="head_tilt_joint">
-      <command_interface name="position">
-        <param name="min">-0.8</param>
-        <param name="max">0.8</param>
-      </command_interface>
+      <param name="pos_kp">100.0</param>
+      <param name="pos_ki">1.0</param>
+      <param name="pos_kd">5.0</param>
+      <param name="pos_max_integral_error">1.0</param>
+      <command_interface name="position_pid"/>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
       </state_interface>

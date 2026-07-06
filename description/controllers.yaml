@@ -20,10 +20,13 @@ controller_manager:
       type: joint_state_broadcaster/JointStateBroadcaster
 
     leg_position_controller:
-      type: position_controllers/JointGroupPositionController
+      type: forward_command_controller/ForwardCommandController
 
 leg_position_controller:
   ros__parameters:
+    # interfaccia FISICA position_pid (gazebo_ros2_control): il comando di posizione
+    # diventa coppia via PID (guadagni nel <joint> dell'URDF), non teletrasporto cinematico.
+    interface_name: position_pid
     joints:
       - FL_swing
       - FL_lift
