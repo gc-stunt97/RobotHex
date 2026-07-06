@@ -55,6 +55,10 @@ TILT_ABS = 0.8            # testa tilt: +/- ~46 gradi
 # Stallo di un servo hobby tipo MG996R ~ 0.9-1.5 N*m @6V; velocita' ~0.17 s/60deg ~ 6 rad/s.
 JOINT_EFFORT = 1.5        # N*m
 JOINT_VELOCITY = 6.0      # rad/s
+# Smorzamento/attrito FISICO del giunto (Nm*s/rad, Nm). Col controllo in coppia il
+# solutore ne tiene conto: dissipa le micro-oscillazioni del PID alla radice (meno jitter).
+JOINT_DAMPING = 0.3
+JOINT_FRICTION = 0.05
 
 # Token sostituito dal launch col percorso ASSOLUTO del controllers.yaml sul laptop.
 CONTROLLERS_YAML_TOKEN = "__CONTROLLERS_YAML__"
@@ -183,6 +187,7 @@ def joint(name, jtype, parent, child, origin_mm, axis=(0, 0, 0),
     if jtype == "revolute":
         s += (f'    <limit lower="{lower}" upper="{upper}" '
               f'effort="{JOINT_EFFORT}" velocity="{JOINT_VELOCITY}"/>\n')
+        s += f'    <dynamics damping="{JOINT_DAMPING}" friction="{JOINT_FRICTION}"/>\n'
     s += "  </joint>\n"
     return s
 
