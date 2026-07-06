@@ -31,6 +31,7 @@ import os
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription,
                              RegisterEventHandler, ExecuteProcess)
+from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -48,6 +49,7 @@ def generate_launch_description():
         robot_description = f.read().replace("__CONTROLLERS_YAML__", yaml_path)
 
     gui = LaunchConfiguration("gui")
+    drive = LaunchConfiguration("drive")
 
     # 1) Gazebo Classic (mondo vuoto). Il launch di gazebo_ros carica gia' i
     #    plugin factory/ros2_control necessari.
@@ -86,12 +88,33 @@ def generate_launch_description():
         output="screen",
     )
 
+    # 5) (opzionale, drive:=true) guida la sim col gait VERO:
+    #    teleop RIMAPPATO (joint_states -> desired_joint_states, per non litigare col
+    #    joint_state_broadcaster che possiede /joint_states) + il ponte gazebo_bridge
+    #    che traduce in Float64MultiArray per il controller.
+    #    Richiede robot_controllers COMPILATO e sourced sul laptop (colcon build).
+    #    Gli input joystick (left/right_joystick_data) arrivano dal controller reale via
+    #    WiFi, oppure a mano con `ros2 topic pub` (vedi note in fondo).
+    teleop = Node(
+        package="robot_controllers", executable="teleop", output="screen",
+        remappings=[("joint_states", "desired_joint_states")],
+        condition=IfCondition(drive),
+    )
+    bridge = Node(
+        package="robot_controllers", executable="gazebo_bridge", output="screen",
+        condition=IfCondition(drive),
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument("gui", default_value="true",
                               description="true=finestra 3D Gazebo; false=headless (piu' leggero)"),
+        DeclareLaunchArgument("drive", default_value="false",
+                              description="true=avvia anche teleop+gazebo_bridge (guida col gait)"),
         gazebo,
         rsp,
         spawn,
+        teleop,
+        bridge,
         # incatena: spawn finito -> carica broadcaster -> carica position controller
         RegisterEventHandler(OnProcessExit(target_action=spawn, on_exit=[load_jsb])),
         RegisterEventHandler(OnProcessExit(target_action=load_jsb, on_exit=[load_pos])),
