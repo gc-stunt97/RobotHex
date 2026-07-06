@@ -101,7 +101,7 @@ class Teleop(Node):
         self.declare_parameter("invert_tilt", False)
         self.declare_parameter("rate_hz", 30.0)
         # parametri gait (modalita' 'gait'); stessi significati di tools/test_gait_all.py
-        self.declare_parameter("gait_pattern", "ripple")   # tripod | ripple | wave
+        self.declare_parameter("gait_pattern", "ripple")   # tripod | ripple | wave | genghis
         self.declare_parameter("stride", 60.0)             # mm, lunghezza passo
         self.declare_parameter("stance_up", -100.0)        # mm, altezza corpo (piu' neg = piu' alto)
         self.declare_parameter("swing_lift", 45.0)         # mm, sollevamento piede in aria

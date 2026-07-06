@@ -46,6 +46,12 @@ GAITS = {
     "ripple": {"RR": 0.0, "RL": 1.0 / 6, "MR": 2.0 / 6, "ML": 3.0 / 6, "FR": 4.0 / 6, "FL": 5.0 / 6},
     # Wave: una gamba alla volta (per renderlo davvero tale servirebbe duty ~5/6).
     "wave": {"RR": 0.0, "MR": 1.0 / 6, "FR": 2.0 / 6, "FL": 3.0 / 6, "ML": 4.0 / 6, "RL": 5.0 / 6},
+    # Genghis: una gamba alla volta (come wave) MA nell'ordine dei due TRIPODI. Prima i tre del
+    # tripode B (FR, ML, RR) uno per volta, poi i tre del tripode A (FL, MR, RL). Alterna
+    # destra/sinistra ad ogni passo e cicla le file -> molto stabile (5 piedi sempre a terra).
+    # E' il gait osservato sul Genghis originale. Come wave, va usato con duty ~5/6 (0.83)
+    # per essere davvero "una zampa alla volta"; col duty di default (0.5) volano 3 zampe.
+    "genghis": {"FR": 0.0, "ML": 1.0 / 6, "RR": 2.0 / 6, "FL": 3.0 / 6, "MR": 4.0 / 6, "RL": 5.0 / 6},
 }
 
 
