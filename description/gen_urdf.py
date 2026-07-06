@@ -9,7 +9,15 @@ Perche' un generatore invece di scrivere l'URDF a mano (o in xacro):
     coerente con la cinematica: se ricalibri o cambi un offset, rigeneri e basta.
 
 Uso:
-    python gen_urdf.py            # scrive genghis.urdf accanto a questo file
+    python gen_urdf.py            # -> genghis.urdf        (per RViz)
+    python gen_urdf.py --gazebo   # -> genghis_gazebo.urdf (per Gazebo: fisica + ros2_control)
+
+Differenza tra i due file:
+  - Entrambi hanno ORA inerzie REALI calcolate dalle forme (box/sfera) e non piu'
+    placeholder 1e-4. Serve a Gazebo (in RViz e' innocuo). Vedi `inertia_box_vals`.
+  - Il file `--gazebo` AGGIUNGE in coda: attrito ai piedi (`<gazebo reference=...>`),
+    il blocco `<ros2_control>` (i "servo virtuali") e il plugin `gazebo_ros2_control`.
+    Il percorso del controllers.yaml e' lasciato come TOKEN, risolto dal launch.
 
 Convenzione frame (standard ROS REP-103):  X = avanti, Y = sinistra, Z = su.
 Origine del base_link: centro corpo (traversa centrale, linea centrale delle spine),
@@ -32,6 +40,24 @@ import leg_config as lc  # noqa: E402
 def m(mm):
     """mm -> metri (l'URDF lavora in metri)."""
     return mm / 1000.0
+
+
+# --------------------------------------------------------------------------
+# Limiti dei giunti (rad) — FONTE UNICA: usati sia nei <joint> sia nel blocco
+# <ros2_control> di Gazebo, cosi' non possono divergere.
+# --------------------------------------------------------------------------
+SWING_ABS = 0.9            # swing: +/- 0.9 rad (~51 gradi)
+LIFT_LO, LIFT_HI = -0.4, 1.4   # lift: da -0.4 (piede su) a +1.4 (piede molto giu')
+PAN_ABS = 1.57            # testa pan: +/- 90 gradi
+TILT_ABS = 0.8            # testa tilt: +/- ~46 gradi
+
+# Caratteristiche "servo" per i <limit> (contano in Gazebo, non in RViz).
+# Stallo di un servo hobby tipo MG996R ~ 0.9-1.5 N*m @6V; velocita' ~0.17 s/60deg ~ 6 rad/s.
+JOINT_EFFORT = 1.5        # N*m
+JOINT_VELOCITY = 6.0      # rad/s
+
+# Token sostituito dal launch col percorso ASSOLUTO del controllers.yaml sul laptop.
+CONTROLLERS_YAML_TOKEN = "__CONTROLLERS_YAML__"
 
 
 # --------------------------------------------------------------------------
@@ -71,18 +97,47 @@ def bz(phys_z):
 
 
 # --------------------------------------------------------------------------
+# Inerzie — calcolate dalla forma (kg*m^2). In RViz sono ignorate; in Gazebo
+# sono ESSENZIALI: un tensore sbagliato (o i vecchi placeholder 1e-4 uguali per
+# tutti) fa vibrare/esplodere il modello. Formule del corpo rigido omogeneo.
+# --------------------------------------------------------------------------
+INERTIA_FLOOR = 1e-6      # Gazebo diventa instabile con inerzie troppo piccole
+
+
+def _floor3(ixx, iyy, izz):
+    return (max(ixx, INERTIA_FLOOR), max(iyy, INERTIA_FLOOR), max(izz, INERTIA_FLOOR))
+
+
+def inertia_box_vals(mass, sx, sy, sz):
+    """Tensore d'inerzia di una scatola piena omogenea (dimensioni in metri)."""
+    ixx = mass / 12.0 * (sy * sy + sz * sz)
+    iyy = mass / 12.0 * (sx * sx + sz * sz)
+    izz = mass / 12.0 * (sx * sx + sy * sy)
+    return _floor3(ixx, iyy, izz)
+
+
+def inertia_sphere_vals(mass, r):
+    """Tensore d'inerzia di una sfera piena omogenea (raggio in metri)."""
+    i = 2.0 / 5.0 * mass * r * r
+    return _floor3(i, i, i)
+
+
+# --------------------------------------------------------------------------
 # Helper per emettere pezzi di URDF
 # --------------------------------------------------------------------------
-def inertial(mass, ixx=1e-4, iyy=1e-4, izz=1e-4):
+def inertial(mass, ixx, iyy, izz, origin=(0.0, 0.0, 0.0)):
+    ox, oy, oz = origin
     return f"""    <inertial>
+      <origin xyz="{ox} {oy} {oz}" rpy="0 0 0"/>
       <mass value="{mass}"/>
-      <inertia ixx="{ixx}" ixy="0" ixz="0" iyy="{iyy}" iyz="0" izz="{izz}"/>
+      <inertia ixx="{ixx:.6e}" ixy="0" ixz="0" iyy="{iyy:.6e}" iyz="0" izz="{izz:.6e}"/>
     </inertial>"""
 
 
 def box_link(name, size_mm, origin_mm=(0, 0, 0), material="alu", mass=0.03):
     sx, sy, sz = (m(v) for v in size_mm)
     ox, oy, oz = (m(v) for v in origin_mm)
+    ixx, iyy, izz = inertia_box_vals(mass, sx, sy, sz)
     return f"""  <link name="{name}">
     <visual>
       <origin xyz="{ox} {oy} {oz}" rpy="0 0 0"/>
@@ -93,13 +148,14 @@ def box_link(name, size_mm, origin_mm=(0, 0, 0), material="alu", mass=0.03):
       <origin xyz="{ox} {oy} {oz}" rpy="0 0 0"/>
       <geometry><box size="{sx} {sy} {sz}"/></geometry>
     </collision>
-{inertial(mass)}
+{inertial(mass, ixx, iyy, izz, origin=(ox, oy, oz))}
   </link>
 """
 
 
 def sphere_link(name, radius_mm, material="foot", mass=0.01):
     r = m(radius_mm)
+    ixx, iyy, izz = inertia_sphere_vals(mass, r)
     return f"""  <link name="{name}">
     <visual>
       <geometry><sphere radius="{r}"/></geometry>
@@ -108,7 +164,7 @@ def sphere_link(name, radius_mm, material="foot", mass=0.01):
     <collision>
       <geometry><sphere radius="{r}"/></geometry>
     </collision>
-{inertial(mass)}
+{inertial(mass, ixx, iyy, izz)}
   </link>
 """
 
@@ -125,18 +181,35 @@ def joint(name, jtype, parent, child, origin_mm, axis=(0, 0, 0),
         ax, ay, az = axis
         s += f'    <axis xyz="{ax} {ay} {az}"/>\n'
     if jtype == "revolute":
-        s += f'    <limit lower="{lower}" upper="{upper}" effort="10" velocity="6"/>\n'
+        s += (f'    <limit lower="{lower}" upper="{upper}" '
+              f'effort="{JOINT_EFFORT}" velocity="{JOINT_VELOCITY}"/>\n')
     s += "  </joint>\n"
     return s
 
 
 # --------------------------------------------------------------------------
+# Elenco ORDINATO dei giunti attuati (per il blocco ros2_control e per il yaml
+# dei controller). Ordine: per gamba swing+lift (FL,FR,ML,MR,RL,RR), poi testa.
+# --------------------------------------------------------------------------
+def actuated_joints():
+    js = []
+    for name in lc.LEGS:
+        js.append((f"{name}_swing", -SWING_ABS, SWING_ABS))
+        js.append((f"{name}_lift", LIFT_LO, LIFT_HI))
+    js.append(("head_pan_joint", -PAN_ABS, PAN_ABS))
+    js.append(("head_tilt_joint", -TILT_ABS, TILT_ABS))
+    return js
+
+
+# --------------------------------------------------------------------------
 # Costruzione URDF
 # --------------------------------------------------------------------------
-def build():
+def build(gazebo=False):
     out = []
     out.append('<?xml version="1.0"?>\n')
     out.append('<!-- GENERATO da description/gen_urdf.py — NON modificare a mano. -->\n')
+    if gazebo:
+        out.append('<!-- Variante GAZEBO: inerzie reali + attrito piedi + ros2_control. -->\n')
     out.append('<robot name="genghis">\n')
 
     # Materiali (colori solo per RViz)
@@ -171,12 +244,16 @@ def build():
       <geometry><box size="{m(SPINE_SQ)} {m(2*HALF_SWING+SPINE_SQ)} {m(SPINE_SQ)}"/></geometry>
       <material name="alu"/>
     </visual>\n""")
-    # collision unica semplice (scatola che avvolge il corpo) + inerzia
+    # collision unica semplice (scatola che avvolge il corpo) + inerzia REALE dal box corpo
+    body_cx = m(SPINE_CX)
+    body_cz = m(bz((LOWER_C + UPPER_C) / 2))
+    body_sx, body_sy, body_sz = m(SPINE_LEN), m(2 * HALF_SWING + SPINE_SQ), m(UPPER_C - LOWER_C + SPINE_SQ)
+    b_ixx, b_iyy, b_izz = inertia_box_vals(0.6, body_sx, body_sy, body_sz)
     out.append(f"""    <collision>
-      <origin xyz="{m(SPINE_CX)} 0 {m(bz((LOWER_C+UPPER_C)/2))}" rpy="0 0 0"/>
-      <geometry><box size="{m(SPINE_LEN)} {m(2*HALF_SWING+SPINE_SQ)} {m(UPPER_C-LOWER_C+SPINE_SQ)}"/></geometry>
+      <origin xyz="{body_cx} 0 {body_cz}" rpy="0 0 0"/>
+      <geometry><box size="{body_sx} {body_sy} {body_sz}"/></geometry>
     </collision>
-{inertial(0.6, 2e-3, 6e-3, 6e-3)}
+{inertial(0.6, b_ixx, b_iyy, b_izz, origin=(body_cx, 0.0, body_cz))}
   </link>
 """)
 
@@ -186,6 +263,10 @@ def build():
 
     # ----- testa pan/tilt + camera -----
     out.append(build_head())
+
+    # ----- estensioni Gazebo (fisica + attuatori) -----
+    if gazebo:
+        out.append(gazebo_extensions())
 
     out.append("</robot>\n")
     return "".join(out)
@@ -205,7 +286,7 @@ def build_leg(name, cfg):
     # giunto SWING: asse verticale. axis Z = -out_sign -> valore giunto = alpha (>0 avanti)
     txt += joint(f"{name}_swing", "revolute", "base_link", f"{name}_shoulder",
                  origin_mm=(row_x, shoulder_y, 0), axis=(0, 0, -s),
-                 lower=-0.9, upper=0.9)
+                 lower=-SWING_ABS, upper=SWING_ABS)
     # link spalla: piccolo blocco servo dallo swing verso il fulcro di lift
     txt += box_link(f"{name}_shoulder", size_mm=(abs(fwd)+10, abs(out_off)+10, 20),
                     origin_mm=(fwd / 2, out_off / 2, 0), material="servo", mass=0.05)
@@ -213,7 +294,7 @@ def build_leg(name, cfg):
     # giunto LIFT: asse orizzontale ∥ avanti. axis X = -out_sign -> valore giunto = beta (>0 giu')
     txt += joint(f"{name}_lift", "revolute", f"{name}_shoulder", f"{name}_leg",
                  origin_mm=(fwd, out_off, 0), axis=(-s, 0, 0),
-                 lower=-0.4, upper=1.4)
+                 lower=LIFT_LO, upper=LIFT_HI)
     # link gamba: asta 140 mm lungo OUT (a beta=0 orizzontale)
     txt += box_link(f"{name}_leg", size_mm=(6, leg_len, 6),
                     origin_mm=(0, s * leg_len / 2, 0), material="leg", mass=0.03)
@@ -230,13 +311,13 @@ def build_head():
     # PAN: asse verticale, al centro della traversa anteriore sulla spina superiore
     txt += joint("head_pan_joint", "revolute", "base_link", "head_pan",
                  origin_mm=(PAN_X, 0, bz(PAN_Z)), axis=(0, 0, 1),
-                 lower=-1.57, upper=1.57)
+                 lower=-PAN_ABS, upper=PAN_ABS)
     txt += box_link("head_pan", size_mm=(20, 20, TILT_UP),
                     origin_mm=(TILT_FWD / 2, 0, TILT_UP / 2), material="head", mass=0.03)
     # TILT: asse orizzontale (Y), dal pan avanti 20 su 40
     txt += joint("head_tilt_joint", "revolute", "head_pan", "head_tilt",
                  origin_mm=(TILT_FWD, 0, TILT_UP), axis=(0, 1, 0),
-                 lower=-0.8, upper=0.8)
+                 lower=-TILT_ABS, upper=TILT_ABS)
     txt += box_link("head_tilt", size_mm=(CAM_FWD, 30, 20),
                     origin_mm=(CAM_FWD / 2, 0, 0), material="head", mass=0.02)
     # CAMERA: obiettivo 25 mm avanti all'asse di tilt
@@ -246,9 +327,65 @@ def build_head():
     return txt
 
 
+# --------------------------------------------------------------------------
+# Estensioni GAZEBO
+#   1) Attrito ai piedi: senza questo il robot SCIVOLA e non cammina mai.
+#      mu1/mu2 alti = piede grippante; kp/kd = rigidezza/smorzamento del contatto.
+#   2) <ros2_control>: dichiara i "servo virtuali" (un command_interface di POSIZIONE
+#      per giunto). E' il pezzo che permette a un controller di tenere gli angoli.
+#   3) plugin gazebo_ros2_control: fa girare il controller_manager DENTRO Gazebo e
+#      legge i parametri dal controllers.yaml (percorso iniettato dal launch).
+# --------------------------------------------------------------------------
+def gazebo_extensions():
+    out = ["\n  <!-- ===== ESTENSIONI GAZEBO ===== -->\n"]
+
+    # 1) attrito: piedi grippanti (mu alto), corpo/gambe piu' scivolosi
+    for name in lc.LEGS:
+        out.append(f"""  <gazebo reference="{name}_foot">
+    <mu1>1.2</mu1>
+    <mu2>1.2</mu2>
+    <kp>1000000.0</kp>
+    <kd>1.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>0.0</maxVel>
+    <material>Gazebo/FlatBlack</material>
+  </gazebo>
+""")
+
+    # 2) blocco ros2_control: un'interfaccia di posizione per ogni giunto attuato
+    out.append('  <ros2_control name="GazeboSystem" type="system">\n')
+    out.append('    <hardware>\n')
+    out.append('      <plugin>gazebo_ros2_control/GazeboSystem</plugin>\n')
+    out.append('    </hardware>\n')
+    for jn, lo, hi in actuated_joints():
+        out.append(f"""    <joint name="{jn}">
+      <command_interface name="position">
+        <param name="min">{lo}</param>
+        <param name="max">{hi}</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+""")
+    out.append('  </ros2_control>\n')
+
+    # 3) plugin: il controller_manager gira dentro Gazebo, param dal yaml (token risolto dal launch)
+    out.append(f"""  <gazebo>
+    <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+      <parameters>{CONTROLLERS_YAML_TOKEN}</parameters>
+    </plugin>
+  </gazebo>
+""")
+    return "".join(out)
+
+
 if __name__ == "__main__":
-    urdf = build()
-    dest = os.path.join(HERE, "genghis.urdf")
+    gazebo = "--gazebo" in sys.argv[1:]
+    urdf = build(gazebo=gazebo)
+    fname = "genghis_gazebo.urdf" if gazebo else "genghis.urdf"
+    dest = os.path.join(HERE, fname)
     with open(dest, "w", encoding="utf-8") as f:
         f.write(urdf)
-    print(f"Scritto {dest}  ({len(urdf)} byte, {urdf.count('<link') } link, {urdf.count('<joint')} joint)")
+    print(f"Scritto {dest}  ({len(urdf)} byte, {urdf.count('<link')} link, "
+          f"{urdf.count('<joint ')} joint, gazebo={gazebo})")

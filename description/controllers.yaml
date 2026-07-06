@@ -1,0 +1,41 @@
+# Configurazione ros2_control per Gazebo (esapode Genghis).
+#
+# Due controller girano dentro il controller_manager (avviato dal plugin
+# gazebo_ros2_control):
+#   - joint_state_broadcaster: PUBBLICA /joint_states leggendo lo stato dei
+#     giunti simulati (posizione/velocita' vere in Gazebo). E' la "misura".
+#   - leg_position_controller (JointGroupPositionController): RICEVE gli angoli
+#     desiderati su /leg_position_controller/commands (std_msgs/Float64MultiArray,
+#     un valore per giunto NELL'ORDINE della lista `joints` sotto) e li impone ai
+#     command_interface di posizione dichiarati nel blocco <ros2_control> dell'URDF.
+#
+# ATTENZIONE all'ordine dei giunti: deve combaciare con actuated_joints() in
+# gen_urdf.py (per gamba swing+lift su FL,FR,ML,MR,RL,RR, poi testa pan/tilt).
+
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    leg_position_controller:
+      type: position_controllers/JointGroupPositionController
+
+leg_position_controller:
+  ros__parameters:
+    joints:
+      - FL_swing
+      - FL_lift
+      - FR_swing
+      - FR_lift
+      - ML_swing
+      - ML_lift
+      - MR_swing
+      - MR_lift
+      - RL_swing
+      - RL_lift
+      - RR_swing
+      - RR_lift
+      - head_pan_joint
+      - head_tilt_joint
