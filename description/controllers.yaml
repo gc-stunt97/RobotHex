@@ -4,14 +4,17 @@
 # gazebo_ros2_control):
 #   - joint_state_broadcaster: PUBBLICA /joint_states leggendo lo stato dei giunti
 #     simulati (posizione/velocita' vere). E' la "misura".
-#   - leg_position_controller (JointTrajectoryController): controlla la POSIZIONE
-#     applicando COPPIE via PID (interfaccia di comando `effort`). Fisico e stabile:
-#     all'attivazione TIENE la posizione corrente (niente scalino/esplosione), e la
-#     coppia e' limitata dal cap dell'interfaccia effort nell'URDF (~1.5 Nm, realistico).
+#   - leg_position_controller (JointTrajectoryController su interfaccia `position`):
+#     controlla la POSIZIONE. All'attivazione TIENE la posizione corrente (niente
+#     teletrasporto/esplosione) e INTERPOLA i comandi (movimenti morbidi). Non applica
+#     forze -> evita il SetForce(NaN) che l'interfaccia `effort` generava al primo passo.
 #
-# Perche' NON l'interfaccia `position`: su gazebo_ros2_control e' cinematica (SetPosition,
-# teletrasporto) e su base flottante in contatto fa divergere il solutore. `position_pid`
-# non e' supportata dalla versione apt del plugin. Quindi: effort + JTC con PID.
+# Storia dei tentativi (perche' NON gli altri):
+#   - `position` + JointGroupPositionController: scrive 0 all'avvio -> teletrasporto -> boom.
+#   - `position_pid`: non supportata dalla versione apt (EOL) del plugin.
+#   - `effort` + PID: la vecchia versione applica SetForce(NaN) al primo passo -> NaN istantaneo.
+#   -> `position` + JTC (tiene+interpola) e' l'unico stabile qui. Cinematico: realismo di
+#      coppia (brownout) rimandato a gz_ros2_control su Gazebo moderno.
 #
 # ORDINE dei giunti = actuated_joints() in gen_urdf.py (per gamba swing+lift su
 # FL,FR,ML,MR,RL,RR, poi testa pan/tilt) = ordine usato da gazebo_bridge.
@@ -43,26 +46,10 @@ leg_position_controller:
       - RR_lift
       - head_pan_joint
       - head_tilt_joint
+    # Interfaccia di comando POSIZIONE (cinematica): il JTC scrive setpoint di posizione
+    # interpolati, niente PID/coppia -> nessun guadagno da tarare, niente SetForce(NaN).
     command_interfaces:
-      - effort
+      - position
     state_interfaces:
       - position
       - velocity
-    # Anello PID posizione->coppia per ogni giunto. La coppia in uscita e' comunque
-    # tagliata dal cap effort dell'URDF (~1.5 Nm), quindi guadagni "decisi" restano
-    # sicuri. i tiene conto della gravita' (offset di coppia a regime). DA TARARE dal vivo.
-    gains:
-      FL_swing: {p: 18.0, i: 1.0, d: 1.5, i_clamp: 1.0}
-      FL_lift:  {p: 30.0, i: 3.0, d: 2.0, i_clamp: 2.0}
-      FR_swing: {p: 18.0, i: 1.0, d: 1.5, i_clamp: 1.0}
-      FR_lift:  {p: 30.0, i: 3.0, d: 2.0, i_clamp: 2.0}
-      ML_swing: {p: 18.0, i: 1.0, d: 1.5, i_clamp: 1.0}
-      ML_lift:  {p: 30.0, i: 3.0, d: 2.0, i_clamp: 2.0}
-      MR_swing: {p: 18.0, i: 1.0, d: 1.5, i_clamp: 1.0}
-      MR_lift:  {p: 30.0, i: 3.0, d: 2.0, i_clamp: 2.0}
-      RL_swing: {p: 18.0, i: 1.0, d: 1.5, i_clamp: 1.0}
-      RL_lift:  {p: 30.0, i: 3.0, d: 2.0, i_clamp: 2.0}
-      RR_swing: {p: 18.0, i: 1.0, d: 1.5, i_clamp: 1.0}
-      RR_lift:  {p: 30.0, i: 3.0, d: 2.0, i_clamp: 2.0}
-      head_pan_joint:  {p: 6.0, i: 0.3, d: 0.8, i_clamp: 0.5}
-      head_tilt_joint: {p: 6.0, i: 0.3, d: 0.8, i_clamp: 0.5}

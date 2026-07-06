@@ -202,12 +202,12 @@ def joint(name, jtype, parent, child, origin_mm, axis=(0, 0, 0),
 # non e' uno scalino violento. lift>0 = piede in basso -> corpo sollevato. swing/testa a 0.
 STANCE_LIFT_INIT = 0.6    # rad
 
-# Controllo FISICO: interfaccia di comando `effort` (coppia). Un JointTrajectoryController
-# (vedi controllers.yaml) chiude l'anello di posizione via PID -> coppia. Cosi' i giunti
-# applicano FORZE reali invece del teletrasporto cinematico dell'interfaccia `position`
-# (che su base flottante in contatto faceva divergere il solutore e sparava via il robot).
-# La coppia e' limitata dal cap dell'interfaccia = JOINT_EFFORT (~1.5 Nm, realistico servo):
-# non puo' iniettare energia dal nulla. I guadagni PID stanno nel controllers.yaml.
+# Controllo di POSIZIONE pilotato da JointTrajectoryController (vedi controllers.yaml):
+# l'interfaccia `position` di gazebo_ros2_control e' cinematica, ma il JTC (a) TIENE la
+# posizione corrente all'attivazione (niente teletrasporto/esplosione) e (b) INTERPOLA i
+# comandi (movimenti morbidi). Non applica forze -> evita il SetForce(NaN) che la vecchia
+# versione EOL del plugin generava sull'interfaccia `effort` al primo passo. Il realismo di
+# COPPIA (per studiare il brownout in sim) e' rimandato: serve gz_ros2_control su Gazebo moderno.
 
 
 def actuated_joints():
@@ -379,9 +379,9 @@ def gazebo_extensions():
     out.append('    </hardware>\n')
     for jn, lo, hi, init in actuated_joints():
         out.append(f"""    <joint name="{jn}">
-      <command_interface name="effort">
-        <param name="min">-{JOINT_EFFORT}</param>
-        <param name="max">{JOINT_EFFORT}</param>
+      <command_interface name="position">
+        <param name="min">{lo}</param>
+        <param name="max">{hi}</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">{init}</param>
