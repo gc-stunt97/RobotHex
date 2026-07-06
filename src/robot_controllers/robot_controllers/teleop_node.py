@@ -166,10 +166,10 @@ class Teleop(Node):
         # --- testa: sempre dallo stick destro ---
         pan_range = float(self._p("pan_range"))
         tilt_range = float(self._p("tilt_range"))
-        tilt_sign = -1.0 if self._p("invert_tilt") else 1.0
+        tilt_sign = 1.0 if self._p("invert_tilt") else -1.0
         # x = destra(+): stick a destra -> testa a destra (pan negativo nell'URDF)
         self.joints["head_pan_joint"] = clamp(-self.right.x * pan_range, -PAN_LIMIT, PAN_LIMIT)
-        # y = avanti(+): default guarda in giù (tilt positivo)
+        # y = avanti(+): default guarda in SU (verso ripristinato). invert_tilt=True -> guarda in giù.
         self.joints["head_tilt_joint"] = clamp(tilt_sign * self.right.y * tilt_range,
                                                -TILT_LIMIT, TILT_LIMIT)
 

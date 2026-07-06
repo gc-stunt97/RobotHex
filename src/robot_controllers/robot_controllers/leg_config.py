@@ -43,7 +43,7 @@ class LegConfig:
 # Mappatura REALE (calibrazione giugno 2026). Versi misurati col tool sweep 70/110.
 # swing_center / lift_level calibrati a mano su hardware (luglio 2026), tutte le 6 gambe.
 LEGS = {
-    "FL": LegConfig("FL", "L", "front", swing_channel=4,  lift_channel=5,  swing_fwd_high=True,  lift_up_high=True,  swing_center=90.0, lift_level=90.0),
+    "FL": LegConfig("FL", "L", "front", swing_channel=4,  lift_channel=5,  swing_fwd_high=True,  lift_up_high=True,  swing_center=90.0, lift_level=85.0),  # lift 90->85: piede giu' 5 gradi (tweak a occhio lug '26)
     "FR": LegConfig("FR", "R", "front", swing_channel=6,  lift_channel=7,  swing_fwd_high=False, lift_up_high=False, swing_center=80.0, lift_level=95.0),
     "ML": LegConfig("ML", "L", "mid",   swing_channel=0,  lift_channel=1,  swing_fwd_high=True,  lift_up_high=True,  swing_center=78.0, lift_level=85.0),
     "MR": LegConfig("MR", "R", "mid",   swing_channel=9,  lift_channel=8,  swing_fwd_high=False, lift_up_high=False, swing_center=92.0, lift_level=82.0),
