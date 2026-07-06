@@ -5,7 +5,8 @@ mesi/anni e non ricordi come funziona (né come si usa ROS2), **parti da qui**.
 
 - Hardware, storia, meccanica, mappatura servo → `ROBOTHEX_HANDBOOK.md`
 - Dettagli del controller → `CONTROLLER_HANDBOOK.md` (repo `ROS2-Remote-Controller`)
-- Modello 3D/URDF → `description/README.md` · Video → `camera/README.md` · Avvio auto → `systemd/README.md`
+- Modello 3D/URDF → `description/README.md` · **Simulazione Gazebo → `description/GAZEBO.md`**
+- Video → `camera/README.md` · Avvio auto → `systemd/README.md`
 
 ---
 
@@ -247,4 +248,8 @@ Il **controller** (`ROS2-Remote-Controller`) ha `src/joypad_controller/` (joy_no
 - **Flash STM32** (via ST-Link): attiva i **tastini** joystick → cambio modalità senza schermo.
 - **Mesh STL** nell'URDF (robot fedele in RViz).
 - **Link dedicato** (robot hotspot / router da viaggio) per FPV robusto ovunque.
-- **URDF + Gazebo** (simulazione fisica) sul PC Linux di casa.
+- **URDF + Gazebo** (simulazione fisica) sul laptop workstation Ubuntu: **fatto — robot in
+  piedi, stabile** (`ros2_control` + JointTrajectoryController; vedi `description/GAZEBO.md`).
+  La camminata *cinematica* pattina (limite di Gazebo Classic/`gazebo_ros2_control`): per la
+  camminata **seria** e il realismo di **coppia** (per studiare il brownout in sim) serve
+  **`gz_ros2_control` su Gazebo moderno** — progetto a parte, pipeline odierna riusabile.

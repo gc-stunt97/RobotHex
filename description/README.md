@@ -1,8 +1,9 @@
 # Modello URDF — Genghis (esapode)
 
-Descrizione cinematica del robot per **visualizzazione in RViz** (e, in futuro,
-simulazione fisica in Gazebo). Convenzione frame ROS: **X = avanti, Y = sinistra,
-Z = su**; origine del `base_link` al centro corpo, alla quota dell'asse di lift.
+Descrizione cinematica del robot per **visualizzazione in RViz** e per la
+**simulazione fisica in Gazebo** (→ **`GAZEBO.md`**, robot in piedi funzionante).
+Convenzione frame ROS: **X = avanti, Y = sinistra, Z = su**; origine del `base_link`
+al centro corpo, alla quota dell'asse di lift.
 
 ## File
 
@@ -13,6 +14,11 @@ Z = su**; origine del `base_link` al centro corpo, alla quota dell'asse di lift.
 | `validate_urdf.py` | Controllo veloce senza ROS: XML ben formato + albero coerente. |
 | `display.launch.py` | Avvia robot_state_publisher + joint_state_publisher_gui + RViz. |
 | `genghis.rviz` | Config RViz (RobotModel + TF + griglia). |
+| `GAZEBO.md` | **Guida alla simulazione fisica in Gazebo** (lancio, architettura, scelte, limiti, troubleshooting). |
+| `gen_urdf.py --gazebo` | Genera `genghis_gazebo.urdf` (inerzie reali + attrito + `ros2_control`). |
+| `genghis_gazebo.urdf` | URDF variante Gazebo (**generato**). |
+| `controllers.yaml` | Controller ros2_control per Gazebo (broadcaster + JointTrajectoryController). |
+| `gazebo.launch.py` | Avvia Gazebo + spawn + controller (arg `gui`, `drive`). |
 
 ## Rigenerare l'URDF (dopo modifiche a geometria o calibrazione)
 
@@ -85,4 +91,6 @@ piedi" alza i `*_lift` con gli slider (piede verso il basso → solleva il corpo
 
 - Sostituire le primitive (scatole) con le **mesh STL** reali per un aspetto fedele.
 - Aggiungere gli STL del pan/tilt (già presenti in `files/` del progetto).
-- Per Gazebo: inerzie realistiche + `ros2_control` (fase successiva).
+- **Gazebo**: inerzie realistiche + `ros2_control` **fatti** (robot in piedi, vedi `GAZEBO.md`).
+  La camminata *cinematica* pattina: per la camminata **seria** (e il realismo di coppia)
+  serve `gz_ros2_control` su Gazebo moderno — progetto a parte.
