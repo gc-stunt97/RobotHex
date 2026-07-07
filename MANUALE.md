@@ -100,8 +100,11 @@ ROS serve solo a *telecomandare* il sender (`camera_manager`). Vedi `camera/READ
        `servo_node`) → si raggiungono gli estremi calibrati. `swing_range`/`lift_range` = escursione
        a fondo stick (default = max; abbassali se troppo sensibile).
      - **Gait**: **Y = avanti/indietro**, **X = sterza** (a fondo gira sul posto). Scegli il
-       **Pattern** (tripod/ripple/wave) e regola gli **slider** (stride/period/duty/stance_up).
-       Allo stick a zero il robot **posa le zampe a terra** (posa livellata), non resta a metà ciclo.
+       **Pattern** (tripod/ripple/wave/genghis) e regola gli **slider** (stride/period/duty/stance_up,
+       + **arco** = quanto si alza il piede in volo). Allo stick a zero il robot **posa le zampe a
+       terra** (posa livellata), non resta a metà ciclo. Toggle **Silenzioso**: atterraggio morbido
+       (il piede decelera prima di toccare, "a bacio" → silenzioso, niente colpo a terra); lo slider
+       **atterraggio** (`land_power`) regola quanto in alto inizia a frenare (più alto = più dolce).
      - **Corpo**: posa del corpo a **piedi fermi** (i 6 piedi restano a terra). **X=roll**,
        **Y=pitch**, **manopola Z=yaw** → inclini/ruoti il corpo sul posto. Escursione regolabile
        coi parametri `body_roll_range`/`body_pitch_range`/`body_yaw_range`. Coi 2 DOF il piede
@@ -162,9 +165,11 @@ ros2 bag record /joint_states   # registra;  ros2 bag play <cartella>   # rieseg
 ## 5. Parametri dei nodi
 
 **`teleop`** — `left_stick_mode` (`leg_manual`|`gait`|`body`), `selected_leg` (una gamba,
-lista CSV es. `FL,MR`, o `ALL`), `gait_pattern` (tripod/ripple/wave), `stride`, `period`,
-`duty`, `stance_up`, `swing_lift`, `body_roll_range`, `body_pitch_range`, `body_yaw_range`,
-`swing_range`, `lift_range`, `pan_range`, `tilt_range`, `invert_tilt`, `rate_hz`.
+lista CSV es. `FL,MR`, o `ALL`), `gait_pattern` (tripod/ripple/wave/genghis), `stride`, `period`,
+`duty`, `stance_up`, `swing_lift` (=arco, sollevamento piede in volo), `silence_mode` (atterraggio
+morbido on/off), `land_power` (forma del flare: più alto = frena da più su, più dolce),
+`body_roll_range`, `body_pitch_range`, `body_yaw_range`, `swing_range`, `lift_range`, `pan_range`,
+`tilt_range`, `invert_tilt`, `rate_hz`.
 
 **`servo_node`** — `enabled` (SIM/REAL), `pan_center`, `tilt_center`, `max_deg_per_sec`
 (velocità max servo = slew-rate), `rate_hz`.
