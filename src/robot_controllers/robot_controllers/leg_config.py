@@ -40,15 +40,16 @@ class LegConfig:
     lift_level: float = 90.0    # angolo servo a gamba orizzontale (beta=0) — DA AFFINARE
 
 
-# Mappatura REALE (calibrazione giugno 2026). Versi misurati col tool sweep 70/110.
-# swing_center / lift_level calibrati a mano su hardware (luglio 2026), tutte le 6 gambe.
+# Mappatura REALE dei canali/versi (giugno 2026, tool sweep 70/110).
+# swing_center: comando 'center'. lift_level: metodo TOUCH (pancia a terra, H=27mm asse-lift,
+# beta_touch=asin(27/140)=11.1 gradi) -> luglio 2026, tutte e 6 le gambe. Vedi CALIBRAZIONE.md.
 LEGS = {
-    "FL": LegConfig("FL", "L", "front", swing_channel=4,  lift_channel=5,  swing_fwd_high=True,  lift_up_high=True,  swing_center=90.0, lift_level=85.0),  # lift 90->85: piede giu' 5 gradi (tweak a occhio lug '26)
-    "FR": LegConfig("FR", "R", "front", swing_channel=6,  lift_channel=7,  swing_fwd_high=False, lift_up_high=False, swing_center=80.0, lift_level=95.0),
-    "ML": LegConfig("ML", "L", "mid",   swing_channel=0,  lift_channel=1,  swing_fwd_high=True,  lift_up_high=True,  swing_center=78.0, lift_level=85.0),
-    "MR": LegConfig("MR", "R", "mid",   swing_channel=9,  lift_channel=8,  swing_fwd_high=False, lift_up_high=False, swing_center=92.0, lift_level=82.0),
-    "RL": LegConfig("RL", "L", "rear",  swing_channel=11, lift_channel=10, swing_fwd_high=True,  lift_up_high=False, swing_center=85.0, lift_level=78.0),
-    "RR": LegConfig("RR", "R", "rear",  swing_channel=2,  lift_channel=3,  swing_fwd_high=False, lift_up_high=True,  swing_center=93.0, lift_level=93.0),
+    "FL": LegConfig("FL", "L", "front", swing_channel=4,  lift_channel=5,  swing_fwd_high=True,  lift_up_high=True,  swing_center=92.0, lift_level=80.1),
+    "FR": LegConfig("FR", "R", "front", swing_channel=6,  lift_channel=7,  swing_fwd_high=False, lift_up_high=False, swing_center=77.0, lift_level=81.9),
+    "ML": LegConfig("ML", "L", "mid",   swing_channel=0,  lift_channel=1,  swing_fwd_high=True,  lift_up_high=True,  swing_center=75.0, lift_level=80.1),
+    "MR": LegConfig("MR", "R", "mid",   swing_channel=9,  lift_channel=8,  swing_fwd_high=False, lift_up_high=False, swing_center=91.0, lift_level=85.9),
+    "RL": LegConfig("RL", "L", "rear",  swing_channel=11, lift_channel=10, swing_fwd_high=True,  lift_up_high=False, swing_center=85.0, lift_level=80.9),
+    "RR": LegConfig("RR", "R", "rear",  swing_channel=2,  lift_channel=3,  swing_fwd_high=False, lift_up_high=True,  swing_center=93.0, lift_level=91.1),
 }
 
 LEFT_LEGS = ["FL", "ML", "RL"]

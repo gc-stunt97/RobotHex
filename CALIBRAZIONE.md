@@ -32,21 +32,22 @@ abbassa il piede finché **sfiora** il suolo. Tutte le anche sono alla stessa qu
 per tutte. Il tool converte da solo: `lift_level = angolo_touch ± β_touch` (segno da `lift_up_high`).
 Anche con `H` approssimato il robot resta **livellato** (l'errore è identico su tutte le gambe).
 
-- `H` = altezza dell'asse di **lift** (spalla) dal pavimento a pancia appoggiata. **Da misurare
-  col calibro (una volta): H = ____ mm.** `L` = `LEG_LENGTH_MM` = 140 mm.
+- `H` = altezza dell'asse di **lift** (spalla) dal pavimento a pancia appoggiata. **Misurata
+  (luglio 2026): H = 27 mm** → β_touch = asin(27/140) = 11.1°. `L` = `LEG_LENGTH_MM` = 140 mm.
 - Uso: nel tool `axis <mm>` una volta, poi per ogni gamba `leg X` → abbassi a step piccoli →
   `touch` → `back`; infine `summary` dà le righe pronte per `leg_config.py`.
 
-Calibrati a mano su hardware (luglio 2026). I **limiti** sono lasciati vuoti di
-proposito: i servo non hanno fine-corsa meccanici, il vero vincolo sono le
-collisioni gamba-gamba, che dipendono dalla FASE del gait (le gestisce il gait
-engine con sfasamento + ampiezza di traiettoria contenuta, non un clamp per-servo).
+Calibrazione **luglio 2026**: `swing_center` col comando `center`; `lift_level` col **metodo
+touch** (pancia a terra, `H=27mm`, β_touch=11.1° → `lift_level = touch ± β_touch`). I **limiti**
+qui sotto sono centrati sui valori registrati con semi-ampiezza **±40°**, come *riferimento di
+lavoro*: NON sono ancora applicati per-gamba dal codice (il `servo_node` usa il clamp globale
+10–170; il vero vincolo restano le collisioni gamba-gamba, gestite dal gait engine).
 
 | Gamba | swing_center | lift_level | limiti swing | limiti lift |
 |-------|-------------|-----------|--------------|-------------|
-| FL    | 90          | 85        | (n/d)        | (n/d)       |
-| ML    | 78          | 85        | (n/d)        | (n/d)       |
-| RL    | 85          | 78        | (n/d)        | (n/d)       |
-| FR    | 80          | 95        | (n/d)        | (n/d)       |
-| MR    | 92          | 82        | (n/d)        | (n/d)       |
-| RR    | 93          | 93        | (n/d)        | (n/d)       |
+| FL    | 92          | 80.1      | [52, 132]    | [40, 120]   |
+| ML    | 75          | 80.1      | [35, 115]    | [40, 120]   |
+| RL    | 85          | 80.9      | [45, 125]    | [41, 121]   |
+| FR    | 77          | 81.9      | [37, 117]    | [42, 122]   |
+| MR    | 91          | 85.9      | [51, 131]    | [46, 126]   |
+| RR    | 93          | 91.1      | [53, 133]    | [51, 131]   |
