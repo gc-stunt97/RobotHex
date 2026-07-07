@@ -250,10 +250,10 @@ class Teleop(Node):
         stance_up = float(self._p("stance_up"))
         lift = float(self._p("swing_lift")) * self.gait_gain   # ->0 al rilascio: piedi giu'
         duty = float(self._p("duty"))
-        # SILENCE MODE: atterraggio morbido, dosato PROPORZIONALMENTE alla cadenza (speed 0..1).
-        # La frustata a terra cresce con la marcia; qui il cuscinetto cresce con essa e la annulla
-        # (a bassa andatura serve poco: l'impatto e' gia' lento). Disattivo -> 0 = arco classico.
-        land_soft = speed if bool(self._p("silence_mode")) else 0.0
+        # SILENCE MODE: atterraggio morbido PIENO quando attivo (non diluito dalla velocita':
+        # scalarlo con la cadenza lasciava una frenata finale troppo debole -> sembrava non
+        # rallentare). land_soft=1 -> discesa a flare, il piede tocca terra a velocita' ~0.
+        land_soft = 1.0 if bool(self._p("silence_mode")) else 0.0
 
         for name, cfg in LEGS.items():
             off_fwd = offset_fwd_for(name)
