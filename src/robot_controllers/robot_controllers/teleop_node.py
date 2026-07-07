@@ -107,6 +107,7 @@ class Teleop(Node):
         self.declare_parameter("swing_lift", 45.0)         # mm, sollevamento piede in aria
         self.declare_parameter("period", 2.0)              # s, durata ciclo
         self.declare_parameter("duty", 0.5)                # frazione del ciclo a terra
+        self.declare_parameter("silence_mode", False)      # atterraggio morbido (piede giu' senza sbattere)
         # parametri modalita' 'body' (posa del corpo a piedi fermi): escursione a fondo stick
         self.declare_parameter("body_roll_range", 0.20)    # rad (~11°) rollio  (stick X)
         self.declare_parameter("body_pitch_range", 0.20)   # rad (~11°) beccheggio (stick Y)
@@ -249,12 +250,16 @@ class Teleop(Node):
         stance_up = float(self._p("stance_up"))
         lift = float(self._p("swing_lift")) * self.gait_gain   # ->0 al rilascio: piedi giu'
         duty = float(self._p("duty"))
+        # SILENCE MODE: atterraggio morbido, dosato PROPORZIONALMENTE alla cadenza (speed 0..1).
+        # La frustata a terra cresce con la marcia; qui il cuscinetto cresce con essa e la annulla
+        # (a bassa andatura serve poco: l'impatto e' gia' lento). Disattivo -> 0 = arco classico.
+        land_soft = speed if bool(self._p("silence_mode")) else 0.0
 
         for name, cfg in LEGS.items():
             off_fwd = offset_fwd_for(name)
             stride = base_stride * (self.fL if cfg.side == "L" else self.fR)
             leg_phase = self.phase + offsets.get(name, 0.0)
-            fwd, up = foot_trajectory(leg_phase, off_fwd, stride, stance_up, lift, duty)
+            fwd, up = foot_trajectory(leg_phase, off_fwd, stride, stance_up, lift, duty, land_soft)
             try:
                 alpha, beta, _ = inverse_kinematics(
                     fwd, up, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, off_fwd)

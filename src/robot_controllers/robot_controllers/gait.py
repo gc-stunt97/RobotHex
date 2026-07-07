@@ -14,12 +14,31 @@ Parametri (mm):
   stance_up  : altezza del piede quando e' a terra (negativa = sotto l'asse)
   swing_lift : di quanto si solleva il piede nella fase d'aria
   duty       : frazione del ciclo passata a terra (0.5 = meta' stance, meta' swing)
+  land_soft  : 0..1, "atterraggio morbido" (silence mode). 0 = arco sinusoidale classico
+               (tocca terra a velocita' MAX -> sbatte); 1 = discesa raised-cosine che
+               arriva a terra a velocita' verticale ZERO (silenzioso). Valori intermedi
+               fondono i due profili. Riguarda SOLO la discesa: la salita resta invariata.
 """
 
 import math
 
 
-def foot_trajectory(phase, center_fwd, stride, stance_up, swing_lift, duty=0.5):
+def _swing_height(s, land_soft):
+    """Altezza normalizzata (0..1) del piede durante il volo, s in [0, 1].
+
+    Salita (s<=0.5): sinusoide come sempre (0 a terra -> 1 al culmine, con v=0 al culmine).
+    Discesa (s>0.5): si fonde tra profilo "netto" (cos(pi*d/2), veloce al contatto) e
+    "morbido" (raised-cosine, v=0 al contatto). land_soft=0 -> identico al vecchio arco.
+    """
+    if s <= 0.5:
+        return math.sin(math.pi * s)
+    d = (s - 0.5) / 0.5                          # 0 al culmine -> 1 al contatto
+    sharp = math.cos(math.pi * d / 2.0)          # discesa classica: v != 0 a terra (sbatte)
+    soft = 0.5 * (1.0 + math.cos(math.pi * d))   # discesa morbida: v = 0 a terra (silenzioso)
+    return (1.0 - land_soft) * sharp + land_soft * soft
+
+
+def foot_trajectory(phase, center_fwd, stride, stance_up, swing_lift, duty=0.5, land_soft=0.0):
     """fase 0->1 -> (fwd, up) del piede in mm."""
     p = phase % 1.0
     half = stride / 2.0
@@ -32,7 +51,7 @@ def foot_trajectory(phase, center_fwd, stride, stance_up, swing_lift, duty=0.5):
         # SWING: piede in aria, da -half (indietro) a +half (avanti), con arco di sollevamento
         s = (p - duty) / (1.0 - duty)
         fwd = center_fwd + half * (2.0 * s - 1.0)
-        up = stance_up + swing_lift * math.sin(math.pi * s)
+        up = stance_up + swing_lift * _swing_height(s, land_soft)
     return fwd, up
 
 
