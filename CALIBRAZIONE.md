@@ -24,6 +24,19 @@ Per ogni gamba servono, in angolo servo:
 > Si possono trovare col tool `tools/calibrate_servos.py`. Per ora nel codice valgono 90/90
 > come default; confermato solo su RR. Affinarli migliora la precisione dell'IK.
 
+### Metodo consigliato per `lift_level`: "TOUCH" (pancia a terra)
+Stimare la gamba *orizzontale* a occhio è impreciso e disuniforme. Meglio usare il
+**pavimento come riscontro comune**: chassis a **pancia a terra**, poi per ogni gamba si
+abbassa il piede finché **sfiora** il suolo. Tutte le anche sono alla stessa quota `H`, quindi
+"piede a terra" è la **stessa** configurazione per tutte e sei → `β_touch = asin(H/L)` uguale
+per tutte. Il tool converte da solo: `lift_level = angolo_touch ± β_touch` (segno da `lift_up_high`).
+Anche con `H` approssimato il robot resta **livellato** (l'errore è identico su tutte le gambe).
+
+- `H` = altezza dell'asse di **lift** (spalla) dal pavimento a pancia appoggiata. **Da misurare
+  col calibro (una volta): H = ____ mm.** `L` = `LEG_LENGTH_MM` = 140 mm.
+- Uso: nel tool `axis <mm>` una volta, poi per ogni gamba `leg X` → abbassi a step piccoli →
+  `touch` → `back`; infine `summary` dà le righe pronte per `leg_config.py`.
+
 Calibrati a mano su hardware (luglio 2026). I **limiti** sono lasciati vuoti di
 proposito: i servo non hanno fine-corsa meccanici, il vero vincolo sono le
 collisioni gamba-gamba, che dipendono dalla FASE del gait (le gestisce il gait

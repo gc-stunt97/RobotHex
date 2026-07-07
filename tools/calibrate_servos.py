@@ -33,8 +33,24 @@ MAPPATURA REALE (da leg_config.py — vista dall'alto, fronte lontano):
 MODO GUIDATO (consigliato) — una gamba alla volta:
     leg FL              entra in calibrazione della gamba FL
     legs                elenca i nomi gamba
+    axis <mm>           imposta H = altezza dell'asse di lift da terra a PANCIA APPOGGIATA
+                        (serve al metodo 'touch'; misurala col calibro, una volta sola)
     summary             stampa il riepilogo (righe per leg_config.py + limiti)
     q                   esci (stampa anche il riepilogo)
+
+────────────────────────────────────────────────────────────────────────
+CALIBRAZIONE LIFT COL METODO "TOUCH" (consigliato, molto piu' uniforme)
+    Invece di stimare a occhio la gamba ORIZZONTALE (β=0, error-prone), si usa il
+    PAVIMENTO come riscontro comune: chassis a PANCIA A TERRA su un piano, poi per
+    ogni gamba si abbassa il piede finche' SFIORA il suolo -> 'touch'.
+    Tutte le anche sono alla stessa quota H -> "piede a terra" e' la STESSA
+    configurazione (β_touch = asin(H/L)) per tutte e sei -> misura ripetibile.
+    Il tool converte da solo: lift_level = angolo_touch ± gradi(β_touch).
+    Anche con H approssimato il robot resta LIVELLATO (l'errore e' uguale per tutte).
+    Procedura: 'axis <mm>' una volta -> per ogni gamba 'leg X', abbassi il piede a
+    piccoli passi (step 2) fino a sfiorare, 'touch', 'back'. Poi 'summary'.
+    NB SICUREZZA: qui il robot sta a PANCIA A TERRA (non sollevato). Cosi' e' stabile
+    e le gambe non portano peso; muovi comunque piano.
 
   Dentro una gamba (prompt "[FL]>"):
     l <angolo>          muove il servo LIFT (su/giu).   Es:  l 90
@@ -42,7 +58,10 @@ MODO GUIDATO (consigliato) — una gamba alla volta:
     + / -               ripete l'ultimo servo mosso, +step / -step gradi
     step <gradi>        cambia il passo (default 5)
     home                porta entrambi i servo della gamba a 90
-    level               registra l'angolo LIFT attuale come lift_level (gamba orizzontale)
+    level               registra l'angolo LIFT attuale come lift_level (gamba orizzontale, A OCCHIO)
+    touch               registra l'angolo LIFT attuale come "piede che SFIORA il suolo"
+                        (metodo pancia-a-terra, piu' preciso: vedi sotto). Converte in
+                        lift_level da solo usando 'axis'. Ha priorita' su 'level'.
     center              registra l'angolo SWING attuale come swing_center (gamba perpendicolare)
     lfmin / lfmax       registra l'angolo LIFT attuale come limite min / max
     swmin / swmax       registra l'angolo SWING attuale come limite min / max
@@ -53,6 +72,7 @@ MODO LIBERO (fallback, utile per la testa) — a canali:
     <canale> <angolo>   muove un servo qualsiasi. Es:  12 90   -> canale 12 a 90
 """
 
+import math
 import os
 import sys
 
@@ -74,21 +94,38 @@ def _fmt(v):
     return "?" if v is None else f"{v:g}"
 
 
-def leg_config_line(cfg, rec):
+def beta_touch_deg(h_axis):
+    """β del piede quando SFIORA il suolo a pancia a terra: up=-H -> β=asin(H/L)."""
+    ratio = max(-1.0, min(1.0, h_axis / L.LEG_LENGTH_MM))
+    return math.degrees(math.asin(ratio))
+
+
+def effective_level(cfg, rec, h_axis):
+    """lift_level da usare: dal 'touch' (metodo pancia-a-terra) se disponibile e H nota,
+    altrimenti dal 'level' (a occhio). Conversione servo:
+        lift_servo = lift_level + (-β se lift_up_high else +β)
+    a β=β_touch -> lift_level = touch + (β_touch se lift_up_high else -β_touch)."""
+    if rec.get("touch") is not None and h_axis:
+        b = beta_touch_deg(h_axis)
+        return rec["touch"] + (b if cfg.lift_up_high else -b)
+    return rec["level"]
+
+
+def leg_config_line(cfg, rec, h_axis=None):
     """Riga pronta da incollare in leg_config.py (LEGS), con center/level registrati."""
     return (f'    "{cfg.name}": LegConfig("{cfg.name}", "{cfg.side}", "{cfg.row}", '
             f'swing_channel={cfg.swing_channel}, lift_channel={cfg.lift_channel}, '
             f'swing_fwd_high={cfg.swing_fwd_high}, lift_up_high={cfg.lift_up_high}, '
-            f'swing_center={_fmt(rec["center"])}, lift_level={_fmt(rec["level"])}),')
+            f'swing_center={_fmt(rec["center"])}, lift_level={_fmt(effective_level(cfg, rec, h_axis))}),')
 
 
 def new_record():
-    return {"center": None, "level": None,
+    return {"center": None, "level": None, "touch": None,
             "sw_min": None, "sw_max": None,
             "lf_min": None, "lf_max": None}
 
 
-def calibrate_leg(kit, cfg, rec, step):
+def calibrate_leg(kit, cfg, rec, step, state):
     """Sotto-loop di calibrazione di UNA gamba. Ritorna lo step (eventualmente cambiato)."""
     sw, lf = cfg.swing_channel, cfg.lift_channel
     ang = {sw: None, lf: None}   # angolo corrente per canale (None = non ancora mosso)
@@ -98,8 +135,10 @@ def calibrate_leg(kit, cfg, rec, step):
     print(f"  swing(avanti/indietro) = canale {sw}  |  lift(su/giu) = canale {lf}")
     print(f"  verso: avanti={'alto' if cfg.swing_fwd_high else 'basso'}, "
           f"su={'alto' if cfg.lift_up_high else 'basso'}")
-    print("  Suggerito: 'home' per partire da 90/90, poi affina lift (level) e swing (center).")
-    print("  Comandi: l/s <ang> · +/- · step <g> · home · level · center · "
+    print(f"  -> per ABBASSARE il piede: {'diminuisci' if cfg.lift_up_high else 'aumenta'} "
+          f"l'angolo lift (usa '-'/'+' con step piccolo).")
+    print("  TOUCH (pancia a terra): abbassa il piede finche' sfiora, poi 'touch'.")
+    print("  Comandi: l/s <ang> · +/- · step <g> · home · level · touch · center · "
           "lfmin/lfmax · swmin/swmax · show · back\n")
 
     def move(ch, angle):
@@ -160,6 +199,21 @@ def calibrate_leg(kit, cfg, rec, step):
             print(f"  {'lift' if last_ch == lf else 'swing'}(ch{last_ch}) -> {a} gradi")
             continue
 
+        if cmd == "touch":
+            if ang[lf] is None:
+                print(f"  prima abbassa il lift (ch{lf}) finche' il piede sfiora il suolo")
+                continue
+            rec["touch"] = ang[lf]
+            h = state.get("h_axis")
+            if h:
+                lvl = effective_level(cfg, rec, h)
+                print(f"  registrato touch = {ang[lf]} -> lift_level = {lvl:g}  "
+                      f"(β_touch={beta_touch_deg(h):.1f}°, H={h:g} mm)")
+            else:
+                print(f"  registrato touch = {ang[lf]}  (imposta 'axis <mm>' dal menu per "
+                      f"ottenere lift_level)")
+            continue
+
         # registrazione dei riferimenti / limiti (usano l'angolo CORRENTE del servo)
         rec_map = {"level": (lf, "level"), "center": (sw, "center"),
                    "lfmin": (lf, "lf_min"), "lfmax": (lf, "lf_max"),
@@ -174,34 +228,47 @@ def calibrate_leg(kit, cfg, rec, step):
             print(f"  registrato {key} = {ang[ch]} (gamba {cfg.name})")
             continue
         if cmd == "show":
+            h = state.get("h_axis")
+            lvl = effective_level(cfg, rec, h)
             print(f"  {cfg.name}: center={_fmt(rec['center'])} level={_fmt(rec['level'])} "
+                  f"touch={_fmt(rec['touch'])} -> lift_level={_fmt(lvl)} "
                   f"| swing[{_fmt(rec['sw_min'])},{_fmt(rec['sw_max'])}] "
                   f"lift[{_fmt(rec['lf_min'])},{_fmt(rec['lf_max'])}]")
             continue
 
-        print("  comando sconosciuto. (l/s <ang>, +/-, step, home, level, center, "
+        print("  comando sconosciuto. (l/s <ang>, +/-, step, home, level, touch, center, "
               "lfmin/lfmax, swmin/swmax, show, back)")
 
 
-def print_summary(results):
+def print_summary(results, h_axis=None):
     print("\n──────── RIEPILOGO CALIBRAZIONE ────────")
-    done = [n for n, r in results.items() if r["center"] is not None or r["level"] is not None]
+    done = [n for n, r in results.items()
+            if r["center"] is not None or r["level"] is not None or r["touch"] is not None]
     if not done:
         print("  (niente registrato ancora)")
         return
 
+    if h_axis:
+        print(f"  H (asse lift da terra, pancia giu') = {h_axis:g} mm  ->  "
+              f"β_touch = {beta_touch_deg(h_axis):.1f}°")
+    elif any(results[n]["touch"] is not None for n in done):
+        print("  ⚠️  hai registrato dei 'touch' ma H non e' impostata: i lift_level dei touch")
+        print("      NON sono calcolabili. Imposta 'axis <mm>' e rifai 'summary'.")
+
     print("\n# Righe per leg_config.py (LEGS) — sostituisci quelle esistenti:")
     for name in L.LEGS:
         if name in done:
-            print(leg_config_line(L.LEGS[name], results[name]))
+            print(leg_config_line(L.LEGS[name], results[name], h_axis))
 
-    print("\n# Limiti per CALIBRAZIONE.md:")
-    print("| Gamba | swing_center | lift_level | limiti swing | limiti lift |")
-    print("|-------|-------------|-----------|--------------|-------------|")
+    print("\n# Riepilogo per CALIBRAZIONE.md:")
+    print("| Gamba | swing_center | lift_level | (metodo) | limiti swing | limiti lift |")
+    print("|-------|-------------|-----------|----------|--------------|-------------|")
     for name in L.LEGS:
         r = results[name]
         if name in done:
-            print(f"| {name:<5} | {_fmt(r['center']):<11} | {_fmt(r['level']):<9} | "
+            lvl = effective_level(L.LEGS[name], r, h_axis)
+            method = "touch" if (r["touch"] is not None and h_axis) else "a occhio"
+            print(f"| {name:<5} | {_fmt(r['center']):<11} | {_fmt(lvl):<9} | {method:<8} | "
                   f"[{_fmt(r['sw_min'])}, {_fmt(r['sw_max'])}] | "
                   f"[{_fmt(r['lf_min'])}, {_fmt(r['lf_max'])}] |")
     print()
@@ -211,6 +278,7 @@ def main():
     kit = ServoKit(channels=16)
     results = {name: new_record() for name in L.LEGS}
     step = STEP_DEFAULT
+    state = {"h_axis": None}   # H = altezza asse lift da terra (pancia giu'), per il metodo 'touch'
 
     print(__doc__)
     print("Pronto. (NB: all'avvio non muovo nulla; muovo solo cio' che chiedi tu.)\n")
@@ -220,7 +288,7 @@ def main():
             raw = input("calib> ").strip()
         except (EOFError, KeyboardInterrupt):
             print("\nUscita.")
-            print_summary(results)
+            print_summary(results, state["h_axis"])
             break
         if not raw:
             continue
@@ -228,13 +296,26 @@ def main():
 
         if cmd == "q":
             print("Uscita.")
-            print_summary(results)
+            print_summary(results, state["h_axis"])
             break
         if cmd == "legs":
             print(f"  gambe: {list(L.LEGS)}")
             continue
+        if cmd == "axis":
+            parts = raw.split()
+            if len(parts) == 2:
+                try:
+                    state["h_axis"] = float(parts[1])
+                    print(f"  H (asse lift da terra, pancia giu') = {state['h_axis']:g} mm "
+                          f"-> β_touch = {beta_touch_deg(state['h_axis']):.1f}°")
+                except ValueError:
+                    print("  uso: axis <mm>")
+            else:
+                cur = "n/d" if state["h_axis"] is None else f"{state['h_axis']:g} mm"
+                print(f"  H attuale = {cur}.  uso: axis <mm>")
+            continue
         if cmd == "summary":
-            print_summary(results)
+            print_summary(results, state["h_axis"])
             continue
         if cmd == "leg":
             parts = raw.split()
@@ -245,7 +326,7 @@ def main():
             if name not in L.LEGS:
                 print(f"  gamba '{name}' sconosciuta. Disponibili: {list(L.LEGS)}")
                 continue
-            step = calibrate_leg(kit, L.LEGS[name], results[name], step)
+            step = calibrate_leg(kit, L.LEGS[name], results[name], step, state)
             continue
 
         # MODO LIBERO: "<canale> <angolo>" (fallback, utile per la testa)
@@ -255,7 +336,7 @@ def main():
                 ch = int(parts[0])
                 angle = clamp(float(parts[1]))
             except ValueError:
-                print("  comando sconosciuto. Usa 'leg <NOME>', 'summary', 'q', "
+                print("  comando sconosciuto. Usa 'leg <NOME>', 'axis <mm>', 'summary', 'q', "
                       "oppure '<canale> <angolo>'.")
                 continue
             if not (0 <= ch <= 15):
@@ -265,7 +346,7 @@ def main():
             print(f"  canale {ch} -> {angle} gradi")
             continue
 
-        print("  comando sconosciuto. Usa 'leg <NOME>', 'legs', 'summary', 'q', "
+        print("  comando sconosciuto. Usa 'leg <NOME>', 'legs', 'axis <mm>', 'summary', 'q', "
               "oppure '<canale> <angolo>'.")
 
 
