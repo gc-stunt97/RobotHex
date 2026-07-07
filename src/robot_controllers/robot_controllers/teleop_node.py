@@ -108,6 +108,7 @@ class Teleop(Node):
         self.declare_parameter("period", 2.0)              # s, durata ciclo
         self.declare_parameter("duty", 0.5)                # frazione del ciclo a terra
         self.declare_parameter("silence_mode", False)      # atterraggio morbido (piede giu' senza sbattere)
+        self.declare_parameter("land_power", 3.0)          # forma del flare: piu' alto = frena da piu' su, piu' dolce
         # parametri modalita' 'body' (posa del corpo a piedi fermi): escursione a fondo stick
         self.declare_parameter("body_roll_range", 0.20)    # rad (~11°) rollio  (stick X)
         self.declare_parameter("body_pitch_range", 0.20)   # rad (~11°) beccheggio (stick Y)
@@ -254,12 +255,14 @@ class Teleop(Node):
         # scalarlo con la cadenza lasciava una frenata finale troppo debole -> sembrava non
         # rallentare). land_soft=1 -> discesa a flare, il piede tocca terra a velocita' ~0.
         land_soft = 1.0 if bool(self._p("silence_mode")) else 0.0
+        land_power = float(self._p("land_power"))   # forma del flare (slider "atterraggio")
 
         for name, cfg in LEGS.items():
             off_fwd = offset_fwd_for(name)
             stride = base_stride * (self.fL if cfg.side == "L" else self.fR)
             leg_phase = self.phase + offsets.get(name, 0.0)
-            fwd, up = foot_trajectory(leg_phase, off_fwd, stride, stance_up, lift, duty, land_soft)
+            fwd, up = foot_trajectory(leg_phase, off_fwd, stride, stance_up, lift, duty,
+                                      land_soft, land_power)
             try:
                 alpha, beta, _ = inverse_kinematics(
                     fwd, up, LEG_LENGTH_MM, SHOULDER_OFFSET_OUT_MM, off_fwd)
