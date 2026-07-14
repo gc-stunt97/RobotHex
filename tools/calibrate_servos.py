@@ -7,7 +7,8 @@ Serve a trovare, per ogni gamba, i due riferimenti che l'IK usa come "zero":
                    al corpo) = swing neutro, alpha = 0
   - lift_level   : angolo servo a cui la gamba e' ORIZZONTALE = beta = 0
 e i limiti meccanici sicuri di ogni servo (dove inizia a forzare).
-I numeri trovati vanno poi in leg_config.py (LEGS) e in CALIBRAZIONE.md.
+I numeri trovati si salvano con 'save' in calibration.yaml (li carica leg_config.py);
+i limiti vanno ancora annotati a mano in CALIBRAZIONE.md.
 
 USO sul robot (dentro ~/robothex_ws):
     python3 tools/calibrate_servos.py
@@ -35,7 +36,9 @@ MODO GUIDATO (consigliato) — una gamba alla volta:
     legs                elenca i nomi gamba
     axis <mm>           imposta H = altezza dell'asse di lift da terra a PANCIA APPOGGIATA
                         (serve al metodo 'touch'; misurala col calibro, una volta sola)
-    summary             stampa il riepilogo (righe per leg_config.py + limiti)
+    summary             stampa il riepilogo dei valori registrati
+    save                salva in calibration.yaml SOLO le gambe ricalibrate (merge + backup .bak)
+    save git            come 'save', poi git add+commit+pull --rebase+push del file (dal robot)
     q                   esci (stampa anche il riepilogo)
 
 ────────────────────────────────────────────────────────────────────────
@@ -74,12 +77,14 @@ MODO LIBERO (fallback, utile per la testa) — a canali:
 
 import math
 import os
+import subprocess
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src", "robot_controllers")))
 
 from adafruit_servokit import ServoKit
 from robot_controllers import leg_config as L
+from robot_controllers import calibration_io
 
 STEP_DEFAULT = 5.0
 ANGLE_MIN = 0.0
@@ -123,6 +128,16 @@ def new_record():
     return {"center": None, "level": None, "touch": None,
             "sw_min": None, "sw_max": None,
             "lf_min": None, "lf_max": None}
+
+
+def seeded_record(cfg):
+    """Record pre-caricato coi valori ATTUALI di leg_config (da calibration.yaml).
+    Cosi' la calibrazione e' INCREMENTALE: ritocchi solo cio' che serve, il resto
+    resta com'e'. I limiti non sono persistiti nella config, quindi partono vuoti."""
+    r = new_record()
+    r["center"] = cfg.swing_center
+    r["level"] = cfg.lift_level
+    return r
 
 
 def calibrate_leg(kit, cfg, rec, step, state):
@@ -204,6 +219,7 @@ def calibrate_leg(kit, cfg, rec, step, state):
                 print(f"  prima abbassa il lift (ch{lf}) finche' il piede sfiora il suolo")
                 continue
             rec["touch"] = ang[lf]
+            state["dirty"].add(cfg.name)
             h = state.get("h_axis")
             if h:
                 lvl = effective_level(cfg, rec, h)
@@ -225,6 +241,7 @@ def calibrate_leg(kit, cfg, rec, step, state):
                 print(f"  prima muovi il servo {axis} (ch{ch}) nella posizione giusta")
                 continue
             rec[key] = ang[ch]
+            state["dirty"].add(cfg.name)
             print(f"  registrato {key} = {ang[ch]} (gamba {cfg.name})")
             continue
         if cmd == "show":
@@ -255,7 +272,7 @@ def print_summary(results, h_axis=None):
         print("  ⚠️  hai registrato dei 'touch' ma H non e' impostata: i lift_level dei touch")
         print("      NON sono calcolabili. Imposta 'axis <mm>' e rifai 'summary'.")
 
-    print("\n# Righe per leg_config.py (LEGS) — sostituisci quelle esistenti:")
+    print("\n# Valori registrati (usa 'save' per scriverli in calibration.yaml, senza copiare a mano):")
     for name in L.LEGS:
         if name in done:
             print(leg_config_line(L.LEGS[name], results[name], h_axis))
@@ -274,11 +291,107 @@ def print_summary(results, h_axis=None):
     print()
 
 
+def _git_run(cmd, repo):
+    """Esegue un comando git in `repo`; ritorna (returncode, output). Non solleva."""
+    try:
+        r = subprocess.run(cmd, cwd=repo, capture_output=True, text=True)
+        return r.returncode, (r.stdout + r.stderr).strip()
+    except Exception as e:  # noqa: BLE001
+        return 1, str(e)
+
+
+def _git_manual(fname):
+    print("  il file E' salvato in locale (la calibrazione non si perde). Sincronizza a mano:")
+    print(f"    git add {fname} && git commit -m calib && git pull --rebase && git push")
+
+
+def _git_sync(path, legs):
+    """Best effort: git add+commit+pull --rebase+push del solo calibration.yaml, dal robot.
+    Se qualcosa fallisce il FILE resta salvato: stampa il fallback manuale."""
+    repo = os.path.dirname(os.path.abspath(path)) or "."
+    fname = os.path.basename(path)
+    msg = "calib: aggiorna " + ", ".join(sorted(legs))
+
+    rc, out = _git_run(["git", "add", fname], repo)
+    if rc != 0:
+        print(f"  git add fallito: {out}")
+        _git_manual(fname)
+        return
+    rc, out = _git_run(["git", "commit", "-m", msg], repo)
+    if rc != 0 and "nothing to commit" not in out.lower():
+        print(f"  git commit fallito: {out}")
+        _git_manual(fname)
+        return
+    rc, out = _git_run(["git", "pull", "--rebase"], repo)
+    if rc != 0:
+        print(f"  git pull --rebase fallito (il commit locale c'e' gia'): {out}")
+        print("  risolvi e poi 'git push' a mano.")
+        return
+    rc, out = _git_run(["git", "push"], repo)
+    if rc != 0:
+        print(f"  git push fallito (probabile mancanza credenziali/rete sul robot): {out}")
+        _git_manual(fname)
+        return
+    print("  git: commit + push OK.")
+
+
+def save_to_yaml(results, state, do_git=False):
+    """Scrive in calibration.yaml SOLO le gambe ricalibrate in questa sessione (merge),
+    con backup .bak. Non tocca le altre. Non solleva: gli errori li stampa.
+    Se do_git=True, dopo il salvataggio prova commit+push del file (best effort)."""
+    dirty = state.get("dirty") or set()
+    if not dirty:
+        print("  niente da salvare: non hai ricalibrato nessuna gamba in questa sessione.")
+        return
+    h = state.get("h_axis")
+    updates = {}
+    skipped = []
+    for name in sorted(dirty):
+        cfg = L.LEGS[name]
+        rec = results[name]
+        if rec.get("touch") is not None and not h:
+            skipped.append((name, "c'e' un 'touch' ma manca 'axis <mm>' -> lift_level non calcolabile"))
+            continue
+        center = rec.get("center")
+        lift = effective_level(cfg, rec, h)
+        if center is None or lift is None:
+            skipped.append((name, "center o lift_level mancante"))
+            continue
+        updates[name] = {"swing_center": float(center), "lift_level": float(lift)}
+    if not updates:
+        print("  nessuna gamba salvabile:")
+        for name, why in skipped:
+            print(f"    - {name}: {why}")
+        return
+    try:
+        path = calibration_io.save_calibration(updates)
+    except Exception as e:  # noqa: BLE001
+        print(f"  ERRORE salvataggio: {e}")
+        print("  la calibrazione precedente NON e' stata toccata.")
+        return
+    print(f"  salvato in {path}  (backup: {os.path.basename(path)}.bak)")
+    for name in sorted(updates):
+        u = updates[name]
+        print(f"    {name}: swing_center={u['swing_center']:g}, lift_level={u['lift_level']:g}")
+    if skipped:
+        print("  NON salvate:")
+        for name, why in skipped:
+            print(f"    - {name}: {why}")
+    for name in updates:
+        state["dirty"].discard(name)
+    print("  applica ai nodi in esecuzione: RIAVVIA i nodi (--symlink-install: niente rebuild).")
+    if do_git:
+        _git_sync(path, list(updates))
+    else:
+        print("  per portarla su git: usa 'save git' (o git add/commit/push a mano dal robot).")
+
+
 def main():
     kit = ServoKit(channels=16)
-    results = {name: new_record() for name in L.LEGS}
+    results = {name: seeded_record(L.LEGS[name]) for name in L.LEGS}
     step = STEP_DEFAULT
-    state = {"h_axis": None}   # H = altezza asse lift da terra (pancia giu'), per il metodo 'touch'
+    # h_axis: per il metodo 'touch'. dirty: gambe ricalibrate in questa sessione (le salva 'save').
+    state = {"h_axis": None, "dirty": set()}
 
     print(__doc__)
     print("Pronto. (NB: all'avvio non muovo nulla; muovo solo cio' che chiedi tu.)\n")
@@ -317,6 +430,10 @@ def main():
         if cmd == "summary":
             print_summary(results, state["h_axis"])
             continue
+        if cmd == "save":
+            do_git = len(raw.split()) > 1 and raw.split()[1].lower() == "git"
+            save_to_yaml(results, state, do_git=do_git)
+            continue
         if cmd == "leg":
             parts = raw.split()
             if len(parts) != 2:
@@ -336,8 +453,8 @@ def main():
                 ch = int(parts[0])
                 angle = clamp(float(parts[1]))
             except ValueError:
-                print("  comando sconosciuto. Usa 'leg <NOME>', 'axis <mm>', 'summary', 'q', "
-                      "oppure '<canale> <angolo>'.")
+                print("  comando sconosciuto. Usa 'leg <NOME>', 'axis <mm>', 'summary', 'save', "
+                      "'q', oppure '<canale> <angolo>'.")
                 continue
             if not (0 <= ch <= 15):
                 print("  il canale deve essere tra 0 e 15")
@@ -346,8 +463,8 @@ def main():
             print(f"  canale {ch} -> {angle} gradi")
             continue
 
-        print("  comando sconosciuto. Usa 'leg <NOME>', 'legs', 'axis <mm>', 'summary', 'q', "
-              "oppure '<canale> <angolo>'.")
+        print("  comando sconosciuto. Usa 'leg <NOME>', 'legs', 'axis <mm>', 'summary', 'save', "
+              "'q', oppure '<canale> <angolo>'.")
 
 
 if __name__ == "__main__":

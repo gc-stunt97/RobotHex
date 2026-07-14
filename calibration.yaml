@@ -1,0 +1,10 @@
+# Calibrazione servo - DATI MISURATI di QUESTO robot (non codice).
+# La carica leg_config.py a runtime; la scrive tools/calibrate_servos.py ('save').
+# Modifica pure a mano: solo i due riferimenti zero dell'IK. Angoli servo in gradi.
+legs:
+  FL: {swing_center: 92, lift_level: 80.1}
+  FR: {swing_center: 77, lift_level: 81.9}
+  ML: {swing_center: 75, lift_level: 80.1}
+  MR: {swing_center: 91, lift_level: 85.9}
+  RL: {swing_center: 85, lift_level: 80.9}
+  RR: {swing_center: 93, lift_level: 91.1}
